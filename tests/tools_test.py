@@ -1,7 +1,7 @@
 import pytest
 import json
 
-from llm_tool_box import ToolBox, SchemaGenerator
+from llm_tool_box import ToolBox, SchemaGenerator, schema_name
 from pydantic import BaseModel
 from typing import Any
 
@@ -69,8 +69,13 @@ def test_process():
 def test_register_tool():
     class Tool(BaseModel):
         name: str
+
     def example_tool(tool: Tool):
         print('Running test tool')
+
+    @schema_name("good_name")
+    def bad_name_tool(tool: Tool):
+        print('Running bad_name_tool')
 
     toolbox = ToolBox()
 
@@ -94,5 +99,11 @@ def test_register_tool():
     with pytest.raises(TypeError):
         def wrong_parameter(a: Any): pass
         toolbox.register_tool(wrong_parameter)
+
+    toolbox.register_tool(bad_name_tool)
+    assert 'bad_name_tool' in toolbox.tool_registry
+    assert toolbox.tool_registry['bad_name_tool'][0] == bad_name_tool
+    assert toolbox.tool_registry['bad_name_tool'][1] == Tool
+    assert toolbox.schema_name_to_func('good_name') == 'bad_name_tool'
 
 pytest.main()

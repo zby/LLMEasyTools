@@ -5,6 +5,12 @@ from typing import Any, Dict, get_type_hints
 from docstring_parser import parse
 from pydantic import BaseModel
 
+def schema_name(name):
+    def decorator(func):
+        func.schema_name = name
+        return func
+    return decorator
+
 
 class SchemaGenerator:
     def __init__(self, strict=True, name_mappings=None):
@@ -125,6 +131,7 @@ class ToolResult:
         self.observations = observations
         self.error = error
 
+
 class ToolBox:
     """
     A `ToolBox` object can register LLM tools, generate tool schemas that can be loaded into an LLM call,
@@ -202,6 +209,8 @@ class ToolBox:
 
         self.tool_registry[function.__name__] = (function, param_class)
 
+        if hasattr(function, 'schema_name'):
+            self.name_mappings.append((function.__name__, function.schema_name))
 
     def schema_name_to_func(self, schema_name):
         for fname, sname in self.name_mappings:
