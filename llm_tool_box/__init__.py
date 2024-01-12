@@ -1,9 +1,9 @@
 import inspect
 import json
+from typing import Any, Dict, get_type_hints
 
-from pydantic import BaseModel
 from docstring_parser import parse
-from typing import Any, Dict, Callable,List, Tuple, get_type_hints
+from pydantic import BaseModel
 
 
 class SchemaGenerator:
@@ -126,6 +126,29 @@ class ToolResult:
         self.error = error
 
 class ToolBox:
+    """
+    A `ToolBox` object can register LLM tools, generate tool schemas that can be loaded into an LLM call,
+    and process a function call from an LLM response.
+
+    Methods:
+    - register_tool(function): Registers a function as a tool.
+    The function need to take exactly one parameter of a class that is a subclass of pydantic BaseModel.
+    If the function is a method it needs to be a bound method with one parameter.
+
+    - `toolbox_from_object(cls, obj, *args, **kwargs)`: Creates a new `ToolBox`
+        instance from an existing object and register all its public methods
+        as LLM tools. Parameters are:
+        - `obj`: The object to register tools from.
+        - `*args, **kwargs`: Additional parameters passed to `__init__` method.
+
+    - `process(self, function_call)`: Processes a function call from an LLM response.
+
+    Attributes:
+    - `name_mappings`: A list of tuples mapping names used in LLM schemas and tool function names used in code.
+    - `tool_registry`: A dictionary mapping tool function names to their functions and
+      parameter classes.
+    - `tool_schemas`: A list of tool schemas that can be used in an LLM call.
+    """
     def __init__(self, strict=True, name_mappings=None,
                  tool_registry=None, generator=None,
                  tool_schemas=None, tool_sets=None,
