@@ -90,19 +90,15 @@ class SchemaGenerator:
         """
         tools_array = []
         for function in functions:
-            # Check return type
-            return_type = get_type_hints(function).get('return')
-            if return_type is not None and return_type != str:
-                raise ValueError(f"Return type of {function.__name__} is {return_type} and not str")
-
-            function_schema = self.function_schema(function)
-            tool_item = {
-                "type": "function",
-                "function": function_schema,
-            }
-            tools_array.append(tool_item)
+            tools_array.append(self.generate_tool_schema(function))
         return tools_array
 
+    def generate_tool_schema(self, function: Callable) -> dict:
+        function_schema = self.function_schema(function)
+        return {
+            "type": "function",
+            "function": function_schema,
+        }
     def generate_functions(self, *functions: Callable) -> list:
         """
         Generates a functions description array for multiple functions.
@@ -148,7 +144,8 @@ class ToolBox:
         - `obj`: The object to register tools from.
         - `*args, **kwargs`: Additional parameters passed to `__init__` method.
 
-    - `process(self, function_call)`: Processes a function call from an LLM response.
+    - `process(self, function_call)`: Dispatch a function call from an LLM response to the registered function
+        that matches the function name.
 
     Attributes:
     - `name_mappings`: A list of tuples mapping names used in LLM schemas and tool function names used in code.
@@ -186,31 +183,44 @@ class ToolBox:
         return instance
 
     def register_tools_from_object(self, obj):
-        functions = []
         methods = inspect.getmembers(obj, predicate=inspect.ismethod)
         for name, method in methods:
             if name.startswith('_'):
                 continue
             self.register_tool(method)
-            functions.append(method)
-        tools = self.generator.generate_tools(*functions)
-        self.tool_schemas.extend(tools)
 
-    def register_tool(self, function):
-        parameters = inspect.signature(function).parameters
+    def register_tool(self, function_or_model):
+        if inspect.isroutine(function_or_model):
+            # existing code here judging from your function
+            function = function_or_model
+            parameters = inspect.signature(function).parameters
+            if not len(parameters) == 1:
+                raise TypeError(f"Function {function.__name__} requires {len(parameters)} parameters but we work only with one parameter functions")
+            name, param = list(parameters.items())[0]
+            param_class = param.annotation
+            if not issubclass(param_class, BaseModel):
+                raise TypeError(f"The only parameter of function {function.__name__} is not a subclass of pydantic BaseModel")
+            if hasattr(function, 'schema_name'):
+                self.name_mappings.append((function.__name__, function.schema_name))
+            tool_schema = self.generator.generate_tool_schema(function)
+            self.tool_schemas.append(tool_schema)
+            self.tool_registry[function.__name__] = (function, param_class)
 
-        if not len(parameters) == 1:
-            raise TypeError(f"function {function.__name__} requires {len(parameters)} parameters but we work only with one parameter functions")
-        name, param = list(parameters.items())[0]
-        param_class = param.annotation
 
-        if not issubclass(param_class, BaseModel):
-            raise TypeError(f"the only parameter of function {function.__name__} is not a subclass of pydantic basemodel")
+        elif issubclass(function_or_model, BaseModel):
+            model_class = function_or_model
+            tool_name = model_class.__name__
 
-        self.tool_registry[function.__name__] = (function, param_class)
+            def identity_function(obj: model_class) -> model_class:
+                return obj
+            identity_function.__name__ = f"{tool_name}"
 
-        if hasattr(function, 'schema_name'):
-            self.name_mappings.append((function.__name__, function.schema_name))
+            self.tool_registry[tool_name] = (identity_function, model_class)
+            tool_schema = self.generator.generate_tool_schema(identity_function)
+            self.tool_schemas.append(tool_schema)
+
+        else:
+            raise TypeError("Parameter must be either a one-parameter function or a Pydantic model class instance")
 
     def schema_name_to_func(self, schema_name):
         for fname, sname in self.name_mappings:
