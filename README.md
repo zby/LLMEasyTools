@@ -5,8 +5,11 @@ LLMToolBox is a minimal Python package designed for seamless interaction with
 [OpenAI Python API library](https://github.com/openai/openai-python).
 It focuses on 'tools' and 'function calls', offering a minimalist approach that doesn't get in your way.
 
-By integrating Pydantic, LLMToolBox ensures robust data validation and schema generation, guaranteeing that
-tools are used accurately and efficiently.
+One of the key advantages of LLMToolBox is its non-intrusive design. 
+It doesn't take over the interaction with the OpenAI client, making it easier for developers
+to debug and see exactly what values are being passed.
+
+By integrating Pydantic, LLMToolBox ensures robust data validation and schema generation.
 
 ## Features
 
