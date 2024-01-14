@@ -1,12 +1,11 @@
 # LLMToolBox
 
-LLMToolBox is a Python package designed to facilitate using 'tools' and 'function calls' in OpenAI APIs.
-It is minimal and designed to not get in the way.
+LLMToolBox is a Python package facilitating using 'tools' and 'function calls' in OpenAI APIs
+that does not get in the way.
 
 It can generate tools definitions (schemas) and then process a function call from an LLM response.
 The package leverages Pydantic for data validation and schema generation, ensuring that tools are used with
 the correct data types and structures.
-
 
 ## Features
 
@@ -47,7 +46,6 @@ from pprint import pprint
 
 client = OpenAI()
 
-
 # Define a Pydantic model for your tool's input
 class UserDetail(BaseModel):
     name: str
@@ -74,9 +72,8 @@ pprint(results)
 OUTPUT:
 ```
 [UserDetail(name='Jason', age=25)]
-
-
 ```
+
 ### Example of function call (processing data)
 
 ```python
