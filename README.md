@@ -1,44 +1,45 @@
 # LLMToolBox
+**OpenAI tools and functions with no fuss.**
 
-LLMToolBox is a Python package facilitating using 'tools' and 'function calls' in OpenAI APIs
-that does not get in the way.
+LLMToolBox is a sleek Python package designed for seamless interaction with OpenAI APIs. It focuses on 'tools' and 'function calls', offering a minimalist approach that doesn't get in your way.
 
-It can generate tools definitions (schemas) and then process a function call from an LLM response.
-The package leverages Pydantic for data validation and schema generation, ensuring that tools are used with
-the correct data types and structures.
+By integrating Pydantic, LLMToolBox ensures robust data validation and schema generation, guaranteeing that tools are used accurately and efficiently.
 
 ## Features
 
-- **Schema Generation**: Automatically generate JSON schemas for tools based on Pydantic models.
-- **Function Name Mapping**: Allows for using different names in JSON schemas and python code.
-- **Dispatching Function Calls**: Can call the function corresponding to the function call structure received from the LLM
+- **Schema Generation**: Effortlessly create JSON schemas for tools using Pydantic models.
+- **Function Name Mapping**: Flexibly map JSON schema names to Python code.
+- **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
 
 ## Installation
 
-You can install ToolDefGenerator by cloning the repository and installing it via pip:
+Install LLMToolBox with these simple steps:
 
 ```bash
 git clone git@github.com:zby/LLMToolBox.git
 cd LLMToolBox
 pip install .
 ```
+For development, consider an editable installation:
 
-When working on the package it is useful to install it in editable form:
 ```bash
+
 pip install -r requirements.txt
 pip install -e .
 ```
 
-Then test:
+Run tests to ensure everything is set up correctly:
+
 ```bash
 pytest -v tests
 ```
 
 ## Usage
 
-### Basic example (extracting data)
+### Basic Example: Data Extraction
 
 ```python
+
 from llm_tool_box import ToolBox
 from pydantic import BaseModel
 from openai import OpenAI
@@ -51,32 +52,34 @@ class UserDetail(BaseModel):
     name: str
     age: int
 
-
-# Create a ToolBox instance
+# Initialize ToolBox
 toolbox = ToolBox()
 
-# Register your tool - if a class is passed an identity function over it is registered
+# Register your tool
 toolbox.register_tool(UserDetail)
 
+# Make a request
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Extract Jason is 25 years old"}],
     tools=toolbox.tool_schemas,
     tool_choice="auto",
 )
+
+# Process the response
 results = toolbox.process_response(response)
-# There might be more than one tool calls and more than one result
 
 pprint(results)
 ```
-OUTPUT:
+Output:
 ```
 [UserDetail(name='Jason', age=25)]
 ```
 
-### Example of function call (processing data)
+### Example: Function Call Processing
 
 ```python
+
 def frobnicate_user(user: UserDetail):
     return f"A {user.age} years old user {user.name} frobnicated"
 
@@ -88,18 +91,18 @@ response = client.chat.completions.create(
     tools=toolbox.tool_schemas,
     tool_choice={"type": "function", "function": {"name": "frobnicate_user"}},
 )
-# There might be more than one tool calls and more than one result
+
 results = toolbox.process_response(response)
 
 pprint(results)
 ```
-OUTPUT:
+Output:
 ```
 ['A 25 years old user Jason frobnicated']
 ```
 
-More examples in tests.
+Discover more possibilities and examples in the test suite.
 
 ## License
 
-LLMToolBox is licensed under the Apache License. See LICENSE for more information.
+LLMToolBox is open-sourced under the Apache License. For more details, see the LICENSE file.
