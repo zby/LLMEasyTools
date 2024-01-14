@@ -1,4 +1,4 @@
-from llm_tool_box import ToolBox, ToolResult
+from llm_tool_box import ToolBox
 from pydantic import BaseModel
 from openai import OpenAI
 from pprint import pprint
@@ -12,6 +12,9 @@ class UserDetail(BaseModel):
     age: int
 
 
+def frobnicate_user(user: UserDetail):
+    return f"A {user.age} years old user {user.name} frobnicated"
+
 # Create a ToolBox instance
 toolbox = ToolBox()
 
@@ -24,11 +27,20 @@ response = client.chat.completions.create(
     tools=toolbox.tool_schemas,
     tool_choice="auto",
 )
-pprint(response.choices[0])
-response_message = response.choices[0].message
-tool_calls = response_message.tool_calls
-for tool_call in tool_calls:
-    function_call = tool_call.function
-    result = toolbox.process(function_call)
+# There might be more than one tool calls and more than one result
+results = toolbox.process_response(response)
 
-pprint(result)
+pprint(results)
+
+toolbox.register_tool(frobnicate_user)
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo-1106",
+    messages=[{"role": "user", "content": "Extract Jason is 25 years old"}],
+    tools=toolbox.tool_schemas,
+    tool_choice={"type": "function", "function": {"name": "frobnicate_user"}},
+)
+# There might be more than one tool calls and more than one result
+results = toolbox.process_response(response)
+
+pprint(results)

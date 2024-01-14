@@ -120,14 +120,6 @@ class SchemaGenerator:
         return functions_array
 
 
-class ToolResult:
-    def __init__(self, tool_name=None, tool_args=None, observations=None, error=None):
-        self.tool_name = tool_name
-        self.tool_args = tool_args
-        self.observations = observations
-        self.error = error
-
-
 class ToolBox:
     """
     A `ToolBox` object can register LLM tools, generate tool schemas that can be loaded into an LLM call,
@@ -156,6 +148,7 @@ class ToolBox:
     def __init__(self, strict=True, name_mappings=None,
                  tool_registry=None, generator=None,
                  tool_schemas=None, tool_sets=None,
+                 function_schemas=None,
                  ):
         self.strict = strict
         if tool_registry is None:
@@ -170,6 +163,9 @@ class ToolBox:
         if tool_sets is None:
             tool_sets = []
         self.tool_sets = tool_sets
+        if function_schemas is None:
+            function_schemas = []
+        self.function_schemas = function_schemas
 
         if generator is None:
             generator = SchemaGenerator(strict=self.strict, name_mappings=self.name_mappings)
@@ -204,6 +200,8 @@ class ToolBox:
                 self.name_mappings.append((function.__name__, function.schema_name))
             tool_schema = self.generator.generate_tool_schema(function)
             self.tool_schemas.append(tool_schema)
+            function_schema = self.generator.function_schema(function)
+            self.function_schemas.append(function_schema)
             self.tool_registry[function.__name__] = (function, param_class)
 
 
@@ -228,17 +226,23 @@ class ToolBox:
                 return fname
         return schema_name
 
-    def process(self, function_call):
+    def process_response(self, response):
+        results = []
+        for tool_call in response.choices[0].message.tool_calls:
+            results.append(self.process_function(tool_call.function))
+        return results
+
+    def process_function(self, function_call):
         tool_args = json.loads(function_call.arguments)
         tool_name = function_call.name
         return self._process_unpacked(tool_name, tool_args)
 
     def _process_unpacked(self, tool_name, tool_args):
         function_name = self.schema_name_to_func(tool_name)
-        if function_name is None:
-            return ToolResult(tool_name=tool_name, tool_args=tool_args, error=f"Unknown tool name: {tool_name}")
+        if not function_name in self.tool_registry:
+            raise ValueError(f"Unknown tool name: {tool_name}")
         function, param_class = self.tool_registry[function_name]
         param = param_class(**tool_args)
         observations = function(param)
-        return ToolResult(tool_name=tool_name, tool_args=tool_args, observations=observations)
+        return observations
 

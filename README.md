@@ -37,17 +37,22 @@ pytest -v tests
 
 ## Usage
 
-### Basic example
+### Basic example (extracting data)
+
 ```python
-from llm_tool_box import ToolBox, ToolResult
+from llm_tool_box import ToolBox
 from pydantic import BaseModel
 from openai import OpenAI
+from pprint import pprint
+
 client = OpenAI()
+
 
 # Define a Pydantic model for your tool's input
 class UserDetail(BaseModel):
     name: str
     age: int
+
 
 # Create a ToolBox instance
 toolbox = ToolBox()
@@ -61,10 +66,41 @@ response = client.chat.completions.create(
     tools=toolbox.tool_schemas,
     tool_choice="auto",
 )
-function_call = response.choices[0].message.function_call
-if function_call:
-    result = toolbox.process(function_call)
+results = toolbox.process_response(response)
+# There might be more than one tool calls and more than one result
+
+pprint(results)
 ```
+OUTPUT:
+```
+[UserDetail(name='Jason', age=25)]
+
+
+```
+### Example of function call (processing data)
+
+```python
+def frobnicate_user(user: UserDetail):
+    return f"A {user.age} years old user {user.name} frobnicated"
+
+toolbox.register_tool(frobnicate_user)
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo-1106",
+    messages=[{"role": "user", "content": "Extract Jason is 25 years old"}],
+    tools=toolbox.tool_schemas,
+    tool_choice={"type": "function", "function": {"name": "frobnicate_user"}},
+)
+# There might be more than one tool calls and more than one result
+results = toolbox.process_response(response)
+
+pprint(results)
+```
+OUTPUT:
+```
+['A 25 years old user Jason frobnicated']
+```
+
 More examples in tests.
 
 ## License
