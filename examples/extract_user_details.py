@@ -9,11 +9,11 @@ client = OpenAI()
 # Define a Pydantic model for your tool's input
 class UserDetail(BaseModel):
     name: str
-    age: int
+    city: str
 
 
 def frobnicate_user(user: UserDetail):
-    return f"A {user.age} years old user {user.name} frobnicated"
+    return f"User {user.name} from {user.city} was frobnicated"
 
 # Create a ToolBox instance
 toolbox = ToolBox()
@@ -23,7 +23,7 @@ toolbox.register_tool(UserDetail)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract Jason is 25 years old"}],
+    messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
     tools=toolbox.tool_schemas,
     tool_choice="auto",
 )
@@ -36,7 +36,7 @@ toolbox.register_tool(frobnicate_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract Jason is 25 years old"}],
+    messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
     tools=toolbox.tool_schemas,
     tool_choice={"type": "function", "function": {"name": "frobnicate_user"}},
 )
