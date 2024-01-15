@@ -7,7 +7,7 @@ It focuses on 'tools' and 'function calls', offering a minimalist approach that 
 
 One of the key advantages of LLMToolBox is its non-intrusive design. 
 It doesn't take over the interaction with the OpenAI client, making it easier for developers
-to debug and see exactly what values are being passed.
+to debug their code.
 
 By integrating Pydantic, LLMToolBox ensures robust data validation and schema generation.
 
@@ -16,7 +16,8 @@ By integrating Pydantic, LLMToolBox ensures robust data validation and schema ge
 - **Schema Generation**: Effortlessly create JSON schemas for tools using Pydantic models.
 - **Function Name Mapping**: Flexibly map JSON schema names to Python code.
 - **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
-- **Bound Methods for Stateful Tools**: You can register methods bound to an object to have stateful tools. See examples/stateful_search.py
+- **Stateful Tools**: You can register methods bound to an object to have stateful tools. See examples/stateful_search.py
+- **No Patching!**: It is some 200 lines of straightforward code. No singletons or other globals for now, but maybe I'll add one in the future for some syntactic sugar.
 
 ## Installation
 
@@ -52,7 +53,6 @@ from openai import OpenAI
 from pprint import pprint
 
 client = OpenAI()
-
 
 # Define a Pydantic model for your tool's input
 class UserDetail(BaseModel):
