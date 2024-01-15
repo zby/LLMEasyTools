@@ -84,16 +84,16 @@ Output:
 ### Example: Function Call Processing
 
 ```python
-def frobnicate_user(user: UserDetail):
-    return f"User {user.name} from {user.city} was frobnicated"
+def contact_user(user: UserDetail):
+    return f"User {user.name} from {user.city} was contacted"
 
 toolbox.register_tool(frobnicate_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
+    messages=[{"role": "user", "content": "John lives in Warsaw and likes apple"}],
     tools=toolbox.tool_schemas,
-    tool_choice={"type": "function", "function": {"name": "frobnicate_user"}},
+    tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
@@ -102,7 +102,7 @@ pprint(results)
 ```
 Output:
 ```
-['User John from Warsaw was frobnicated']
+['User John from Warsaw was contacted']
 ```
 
 Discover more possibilities and examples in the test suite.

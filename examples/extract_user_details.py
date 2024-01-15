@@ -12,8 +12,8 @@ class UserDetail(BaseModel):
     city: str
 
 
-def frobnicate_user(user: UserDetail):
-    return f"User {user.name} from {user.city} was frobnicated"
+def contact_user(user: UserDetail):
+    return f"User {user.name} from {user.city} was contactd"
 
 # Create a ToolBox instance
 toolbox = ToolBox()
@@ -23,22 +23,22 @@ toolbox.register_tool(UserDetail)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
+    messages=[{"role": "user", "content": "John lives in Warsaw and likes banana"}],
     tools=toolbox.tool_schemas,
-    tool_choice="auto",
+    tool_choice={"type": "function", "function": {"name": "UserDetail"}},
 )
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
 
 pprint(results)
 
-toolbox.register_tool(frobnicate_user)
+toolbox.register_tool(contact_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
     tools=toolbox.tool_schemas,
-    tool_choice={"type": "function", "function": {"name": "frobnicate_user"}},
+    tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
