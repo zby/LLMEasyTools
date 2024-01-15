@@ -67,10 +67,11 @@ toolbox.register_tool(UserDetail)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
+    messages=[{"role": "user", "content": "Extract user details from the following sentence: John lives in Warsaw and likes banana"}],
     tools=toolbox.tool_schemas,
     tool_choice="auto",
 )
+
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
 
