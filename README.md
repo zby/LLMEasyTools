@@ -16,6 +16,7 @@ By integrating Pydantic, LLMToolBox ensures robust data validation and schema ge
 - **Schema Generation**: Effortlessly create JSON schemas for tools using Pydantic models.
 - **Function Name Mapping**: Flexibly map JSON schema names to Python code.
 - **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
+- **Bound Methods for Stateful Tools**: You can register methods bound to an object to have stateful tools. See examples/stateful_search.py
 
 ## Installation
 
@@ -42,7 +43,7 @@ pytest -v tests
 
 ## Usage
 
-### Basic Example: Data Extraction
+### Basic Example: Getting structured Data from LLM
 
 ```python
 from llm_tool_box import ToolBox
