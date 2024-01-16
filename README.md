@@ -17,27 +17,20 @@ By integrating Pydantic, LLMEasyTools ensures robust data validation and schema 
 - **Structured Data from LLM**
 - **Function Name Mapping**: Flexibly map JSON schema names to Python code.
 - **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
-- **Stateful Tools**: You can register methods bound to an object to have stateful tools. See examples/stateful_search.py
+- **Stateful Tools**: You can register methods bound to an object to have stateful tools. See [examples/stateful_search.py](https://github.com/zby/LLMEasyTools/tree/main/examples)
 - **No Patching!**: No globals, some 200 lines of straightforward object oriented code.
 
 ## Installation
 
-Install LLMEasyTools with these simple steps:
+```bash
+pip install LLMEasyTools
+```
 
+For development:
 ```bash
 git clone git@github.com:zby/LLMEasyTools.git
 cd LLMEasyTools
-pip install .
-```
-For development, consider an editable installation:
-
-```bash
 pip install -e .
-```
-
-Run tests to ensure everything is set up correctly:
-
-```bash
 pytest -v tests
 ```
 
