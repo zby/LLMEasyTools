@@ -248,7 +248,7 @@ class ToolBox:
 
     def _process_unpacked(self, tool_name, tool_args):
         function_name = self.schema_name_to_func(tool_name)
-        if not function_name in self.tool_registry:
+        if function_name not in self.tool_registry:
             raise ValueError(f"Unknown tool name: {tool_name}")
         function, param_class = self.tool_registry[function_name]
         param = param_class(**tool_args)

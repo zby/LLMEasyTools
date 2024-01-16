@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=59.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "LLMToolBox"
+version = "0.01"
+authors = [{ name = "Zbigniew Łukasiak", email = "zzbbyy@gmail.com" }]
+description = "OpenAI tools and functions with no fuss."
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pydantic~=2.5.3",
+    "docstring_parser~=0.15"
+]
+[project.urls]
+repository = "https://github.com/zby/LLMToolBox"
+
+[tool.setuptools]
+packages = ["llm_tool_box"]
+
+[project.optional-dependencies]
+test = ["pytest~=7.4.4"]
+
+[tool.setuptools.dynamic]
+# Add dynamic setuptools configurations if needed
