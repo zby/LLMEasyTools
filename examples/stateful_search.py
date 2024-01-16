@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from llm_tool_box import ToolBox
+from llm_easy_tools import ToolBox
 import re
 from openai import OpenAI
 

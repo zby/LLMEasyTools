@@ -2,7 +2,7 @@ import pytest
 import json
 
 from unittest.mock import Mock
-from llm_tool_box import ToolBox, SchemaGenerator, schema_name
+from llm_easy_tools import ToolBox, SchemaGenerator, schema_name
 from pydantic import BaseModel
 from typing import Any
 

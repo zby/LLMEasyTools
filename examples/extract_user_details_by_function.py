@@ -1,4 +1,4 @@
-from llm_tool_box import ToolBox
+from llm_easy_tools import ToolBox
 from pydantic import BaseModel
 from openai import OpenAI
 from pprint import pprint

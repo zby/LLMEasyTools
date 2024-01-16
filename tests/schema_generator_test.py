@@ -3,7 +3,7 @@ import pytest
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from llm_tool_box import SchemaGenerator
+from llm_easy_tools import SchemaGenerator
 
 
 class Foo(BaseModel):
