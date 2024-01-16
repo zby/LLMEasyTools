@@ -7,17 +7,18 @@ It focuses on 'tools' and 'function calls', offering a minimalist approach that 
 
 One of the key advantages of LLMToolBox is its non-intrusive design. 
 It doesn't take over the interaction with the OpenAI client, making it easier for developers
-to debug their code.
+to debug their code and optimize the communication with the LLM.
 
 By integrating Pydantic, LLMToolBox ensures robust data validation and schema generation.
 
 ## Features
 
 - **Schema Generation**: Effortlessly create JSON schemas for tools using Pydantic models.
+- **Structured Data from LLM**
 - **Function Name Mapping**: Flexibly map JSON schema names to Python code.
 - **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
 - **Stateful Tools**: You can register methods bound to an object to have stateful tools. See examples/stateful_search.py
-- **No Patching!**: It is some 200 lines of straightforward code. No singletons or other globals for now, but maybe I'll add one in the future for some syntactic sugar.
+- **No Patching!**: No globals, some 200 lines of straightforward object oriented code.
 
 ## Installation
 
@@ -44,7 +45,7 @@ pytest -v tests
 
 ## Usage
 
-### Basic Example: Getting structured Data from LLM
+### Basic Example: Getting structured data from LLM
 
 ```python
 from llm_tool_box import ToolBox
@@ -82,17 +83,17 @@ Output:
 [UserDetail(name='John', city='Warsaw')]
 ```
 
-### Example: Function Call Processing
+### Example: Dispatching to a function
 
 ```python
 def contact_user(user: UserDetail):
     return f"User {user.name} from {user.city} was contacted"
 
-toolbox.register_tool(frobnicate_user)
+toolbox.register_tool(contact_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "John lives in Warsaw and likes apple"}],
+    messages=[{"role": "user", "content": "Contact John. John lives in Warsaw"}],
     tools=toolbox.tool_schemas,
     tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
@@ -100,6 +101,7 @@ response = client.chat.completions.create(
 results = toolbox.process_response(response)
 
 pprint(results)
+
 ```
 Output:
 ```

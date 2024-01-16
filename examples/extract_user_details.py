@@ -36,7 +36,7 @@ toolbox.register_tool(contact_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract John lives in Warsaw"}],
+    messages=[{"role": "user", "content": "Contact John. John lives in Warsaw"}],
     tools=toolbox.tool_schemas,
     tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
