@@ -186,39 +186,44 @@ class ToolBox:
             self.register_tool(method)
 
     def register_tool(self, function_or_model):
-        if inspect.isroutine(function_or_model):
-            # existing code here judging from your function
+        # Check if function_or_model is a class
+        if inspect.isclass(function_or_model):
+            if issubclass(function_or_model, BaseModel):
+                model_class = function_or_model
+                tool_name = model_class.__name__
+
+                def function(obj: model_class) -> model_class:
+                    return obj
+
+                function.__name__ = f"{tool_name}"
+            else:
+                raise TypeError("Class must be a Pydantic model class - a subclass of BaseModel")
+        elif inspect.isroutine(function_or_model):
             function = function_or_model
-            parameters = inspect.signature(function).parameters
-            if not len(parameters) == 1:
-                raise TypeError(f"Function {function.__name__} requires {len(parameters)} parameters but we work only with one parameter functions")
-            name, param = list(parameters.items())[0]
-            param_class = param.annotation
-            if not issubclass(param_class, BaseModel):
-                raise TypeError(f"The only parameter of function {function.__name__} is not a subclass of pydantic BaseModel")
-            if hasattr(function, 'schema_name'):
-                self.name_mappings.append((function.__name__, function.schema_name))
-            tool_schema = self.generator.generate_tool_schema(function)
-            self.tool_schemas.append(tool_schema)
-            function_schema = self.generator.function_schema(function)
-            self.function_schemas.append(function_schema)
-            self.tool_registry[function.__name__] = (function, param_class)
-
-
-        elif issubclass(function_or_model, BaseModel):
-            model_class = function_or_model
-            tool_name = model_class.__name__
-
-            def identity_function(obj: model_class) -> model_class:
-                return obj
-            identity_function.__name__ = f"{tool_name}"
-
-            self.tool_registry[tool_name] = (identity_function, model_class)
-            tool_schema = self.generator.generate_tool_schema(identity_function)
-            self.tool_schemas.append(tool_schema)
-
         else:
-            raise TypeError("Parameter must be either a one-parameter function or a Pydantic model class instance")
+            raise TypeError("Parameter must be either a one-parameter function or a Pydantic model class - a subclass of BaseModel")
+
+        parameters = inspect.signature(function).parameters
+        if len(parameters) != 1:
+            raise TypeError(
+                f"Function {function.__name__} requires {len(parameters)} parameters but we work only with one parameter functions")
+
+        name, param = list(parameters.items())[0]
+        param_class = param.annotation
+
+        # Check if param_class is a class and a subclass of BaseModel
+        if not inspect.isclass(param_class) or not issubclass(param_class, BaseModel):
+            raise TypeError(
+                f"The only parameter of function {function.__name__} is not a subclass of pydantic BaseModel")
+
+        if hasattr(function, 'schema_name'):
+            self.name_mappings.append((function.__name__, function.schema_name))
+
+        tool_schema = self.generator.generate_tool_schema(function)
+        self.tool_schemas.append(tool_schema)
+        function_schema = self.generator.function_schema(function)
+        self.function_schemas.append(function_schema)
+        self.tool_registry[function.__name__] = (function, param_class)
 
     def schema_name_to_func(self, schema_name):
         for fname, sname in self.name_mappings:
@@ -228,8 +233,12 @@ class ToolBox:
 
     def process_response(self, response):
         results = []
-        for tool_call in response.choices[0].message.tool_calls:
-            results.append(self.process_function(tool_call.function))
+        if response.choices[0].message.function_call:
+            function_call = response.choices[0].message.function_call
+            results.append(self.process_function(function_call))
+        if response.choices[0].message.tool_calls:
+            for tool_call in response.choices[0].message.tool_calls:
+                results.append(self.process_function(tool_call.function))
         return results
 
     def process_function(self, function_call):
