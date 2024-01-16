@@ -32,8 +32,6 @@ pip install .
 For development, consider an editable installation:
 
 ```bash
-
-pip install -r requirements.txt
 pip install -e .
 ```
 
