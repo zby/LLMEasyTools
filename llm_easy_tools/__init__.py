@@ -161,7 +161,7 @@ class ToolBox:
             tool_schemas = []
         self.tool_schemas = tool_schemas
         if tool_sets is None:
-            tool_sets = []
+            tool_sets = {}
         self.tool_sets = tool_sets
         if function_schemas is None:
             function_schemas = []
@@ -174,11 +174,17 @@ class ToolBox:
     @classmethod
     def toolbox_from_object(cls, obj, *args, **kwargs):
         instance = cls(*args, **kwargs)
-        instance.register_tools_from_object(obj)
-        instance.tool_sets.append(obj)
+        instance.register_toolset(obj)
         return instance
 
-    def register_tools_from_object(self, obj):
+    def register_toolset(self, obj, key=None):
+        if key is None:
+            key = type(obj).__name__
+
+        if key in self.tool_sets:
+            raise Exception(f"A toolset with key {key} already exists.")
+
+        self.tool_sets[key] = obj
         methods = inspect.getmembers(obj, predicate=inspect.ismethod)
         for name, method in methods:
             if name.startswith('_'):
@@ -203,6 +209,8 @@ class ToolBox:
         else:
             raise TypeError("Parameter must be either a one-parameter function or a Pydantic model class - a subclass of BaseModel")
 
+        if function.__name__ in self.tool_registry:
+            raise Exception(f"Trying to register {function.__name__} which is already registered")
         parameters = inspect.signature(function).parameters
         if len(parameters) != 1:
             raise TypeError(

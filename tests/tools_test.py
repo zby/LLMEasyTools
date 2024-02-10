@@ -33,6 +33,23 @@ def test_toolbox_init():
     assert toolbox.tool_schemas == []
     assert isinstance(toolbox.generator, SchemaGenerator)
 
+def test_register_toolset():
+    tool_manager = ToolBox()
+    tool = TestTool()
+
+    # Test the normal case
+    tool_manager.register_toolset(tool)
+
+    assert 'TestTool' in tool_manager.tool_sets
+    assert 'tool_method' in tool_manager.tool_registry
+    assert 'additional_tool_method' in tool_manager.tool_registry
+    assert '_private_tool_method' not in tool_manager.tool_registry
+
+    # Test for Exception when a Toolset with same key is being registered
+    with pytest.raises(Exception) as exception_info:
+        tool_manager.register_toolset(tool)
+
+    assert str(exception_info.value) == 'A toolset with key TestTool already exists.'
 def test_toolbox_from_object():
     toolbox = ToolBox.toolbox_from_object(tool)
     assert "tool_method" in toolbox.tool_registry
