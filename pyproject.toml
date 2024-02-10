@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "LLMEasyTools"
-version = "0.02"
+version = "0.03"
 authors = [{ name = "Zbigniew Łukasiak", email = "zzbbyy@gmail.com" }]
 description = "OpenAI tools and functions with no fuss."
 license = { file = "LICENSE" }
