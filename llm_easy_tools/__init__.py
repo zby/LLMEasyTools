@@ -246,10 +246,10 @@ class ToolBox:
 
     def process_response(self, response, choice_num=0):
         results = []
-        if response.choices[0].message.function_call:
+        if response.choices[choice_num].message.function_call:
             function_call = response.choices[choice_num].message.function_call
             results.append(self.process_function(function_call))
-        if response.choices[0].message.tool_calls:
+        if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
                 results.append(self.process_function(tool_call.function))
         return results
