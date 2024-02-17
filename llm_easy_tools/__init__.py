@@ -141,8 +141,7 @@ class ToolBox:
 
     Attributes:
     - `name_mappings`: A list of tuples mapping names used in LLM schemas and tool function names used in code.
-    - `tool_registry`: A dictionary mapping tool function names to their functions and
-      parameter classes.
+    - `tool_registry`: A dictionary mapping tool function names to their info
     - `tool_schemas`: A list of tool schemas that can be used in an LLM call.
     """
     def __init__(self, strict=True, name_mappings=None,
@@ -231,7 +230,13 @@ class ToolBox:
         self.tool_schemas.append(tool_schema)
         function_schema = self.generator.function_schema(function)
         self.function_schemas.append(function_schema)
-        self.tool_registry[function.__name__] = (function, param_class)
+        self.tool_registry[function.__name__] = {
+            "function": function,
+            "param_class": param_class,
+            "function_schema": function_schema,
+            "tool_schema": tool_schema
+        }
+
 
     def schema_name_to_func(self, schema_name):
         for fname, sname in self.name_mappings:
@@ -239,13 +244,13 @@ class ToolBox:
                 return fname
         return schema_name
 
-    def process_response(self, response):
+    def process_response(self, response, choice_num=0):
         results = []
         if response.choices[0].message.function_call:
-            function_call = response.choices[0].message.function_call
+            function_call = response.choices[choice_num].message.function_call
             results.append(self.process_function(function_call))
         if response.choices[0].message.tool_calls:
-            for tool_call in response.choices[0].message.tool_calls:
+            for tool_call in response.choices[choice_num].message.tool_calls:
                 results.append(self.process_function(tool_call.function))
         return results
 
@@ -258,7 +263,9 @@ class ToolBox:
         function_name = self.schema_name_to_func(tool_name)
         if function_name not in self.tool_registry:
             raise ValueError(f"Unknown tool name: {tool_name}")
-        function, param_class = self.tool_registry[function_name]
+        function_info = self.tool_registry[function_name]
+        param_class = function_info["param_class"]
+        function = function_info["function"]
         param = param_class(**tool_args)
         observations = function(param)
         return observations

@@ -125,8 +125,9 @@ def test_register_tool():
     # Test with correct parameters
     toolbox.register_tool(example_tool)
     assert 'example_tool' in toolbox.tool_registry
-    assert toolbox.tool_registry['example_tool'][0] == example_tool
-    assert toolbox.tool_registry['example_tool'][1] == Tool
+    function_info = toolbox.tool_registry['example_tool']
+    assert function_info["function"] == example_tool
+    assert function_info["param_class"] == Tool
     assert len(toolbox.tool_schemas) == 1
     assert len(toolbox.function_schemas) == 1
     assert toolbox.tool_schemas[0]['function']['name'] == 'example_tool'
@@ -149,8 +150,9 @@ def test_register_tool():
 
     toolbox.register_tool(bad_name_tool)
     assert 'bad_name_tool' in toolbox.tool_registry
-    assert toolbox.tool_registry['bad_name_tool'][0] == bad_name_tool
-    assert toolbox.tool_registry['bad_name_tool'][1] == Tool
+    function_info = toolbox.tool_registry['bad_name_tool']
+    assert function_info["function"] == bad_name_tool
+    assert function_info["param_class"] == Tool
     assert toolbox.schema_name_to_func('good_name') == 'bad_name_tool'
 
 def test_register_tool_with_model():
@@ -163,18 +165,18 @@ def test_register_tool_with_model():
     toolbox = ToolBox()
     toolbox.register_tool(Tool)
 
-    identity_function = toolbox.tool_registry['Tool'][0]
+    identity_function = toolbox.tool_registry['Tool']["function"]
     assert callable(identity_function)
     assert identity_function(Tool(name="test")) == Tool(name="test")
-    assert toolbox.tool_registry['Tool'][1] is Tool
+    assert toolbox.tool_registry['Tool']["param_class"] is Tool
     assert len(toolbox.tool_schemas) == 1
     assert toolbox.tool_schemas[0]['function']['name'] == 'Tool'
 
     toolbox.register_tool(WikiSearch)
-    identity_function = toolbox.tool_registry['WikiSearch'][0]
+    identity_function = toolbox.tool_registry['WikiSearch']["function"]
     assert callable(identity_function)
     assert identity_function(WikiSearch(query="test")) == WikiSearch(query="test")
-    assert toolbox.tool_registry['WikiSearch'][1] is WikiSearch
+    assert toolbox.tool_registry['WikiSearch']["param_class"] is WikiSearch
     assert len(toolbox.tool_schemas) == 2
     assert toolbox.tool_schemas[1]['function']['name'] == 'WikiSearch'
 
