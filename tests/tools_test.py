@@ -2,7 +2,7 @@ import pytest
 import json
 
 from unittest.mock import Mock
-from llm_easy_tools import ToolBox, SchemaGenerator, schema_name
+from llm_easy_tools import ToolBox, SchemaGenerator, external_function
 from pydantic import BaseModel
 from typing import Any
 
@@ -13,9 +13,12 @@ class AdditionalToolParam(BaseModel):
     value: int
 
 class TestTool:
+
+    @external_function()
     def tool_method(self, arg: ToolParam) -> str:
         return f'executed tool_method with param: {arg}'
 
+    @external_function()
     def additional_tool_method(self, arg: AdditionalToolParam) -> str:
         return f'executed additional_tool_method with param: {arg}'
 
@@ -116,7 +119,7 @@ def test_register_tool():
     def example_tool(tool: Tool):
         print('Running test tool')
 
-    @schema_name("good_name")
+    @external_function("good_name")
     def bad_name_tool(tool: Tool):
         print('Running bad_name_tool')
 

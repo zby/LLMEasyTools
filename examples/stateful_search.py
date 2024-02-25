@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from llm_easy_tools import ToolBox
+from llm_easy_tools import ToolBox, external_function
 import re
 from openai import OpenAI
 
@@ -20,6 +20,7 @@ class DocumentManager:
         ]
         self.current_document = None
 
+    @external_function()
     def search_document(self, query: SearchQuery):
         closest_match = None
         min_distance = float('inf')
@@ -36,6 +37,7 @@ class DocumentManager:
         else:
             return "No matching document found."
 
+    @external_function()
     def lookup_word(self, query: WordQuery):
         if not self.current_document:
             return "No document is currently selected."

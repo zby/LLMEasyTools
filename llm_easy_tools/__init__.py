@@ -5,12 +5,14 @@ from typing import Any, Dict, get_type_hints
 from docstring_parser import parse
 from pydantic import BaseModel
 
-def schema_name(name):
+
+def external_function(schema_name=None):
     def decorator(func):
-        func.schema_name = name
+        setattr(func, 'LLMEasyTools_external_function', True)
+        if schema_name is not None:
+            setattr(func, 'LLMEasyTools_schema_name', schema_name)
         return func
     return decorator
-
 
 class SchemaGenerator:
     def __init__(self, strict=True, name_mappings=None):
@@ -186,9 +188,8 @@ class ToolBox:
         self.tool_sets[key] = obj
         methods = inspect.getmembers(obj, predicate=inspect.ismethod)
         for name, method in methods:
-            if name.startswith('_'):
-                continue
-            self.register_function(method)
+            if hasattr(method, 'LLMEasyTools_external_function'):
+                self.register_function(method)
 
     def register_model(self, model_class):
         if not inspect.isclass(model_class) or not issubclass(model_class, BaseModel):
@@ -220,8 +221,8 @@ class ToolBox:
             raise TypeError(
                 f"The only parameter of function {function.__name__} is not a subclass of pydantic BaseModel")
 
-        if hasattr(function, 'schema_name'):
-            self.name_mappings.append((function.__name__, function.schema_name))
+        if hasattr(function, 'LLMEasyTools_schema_name'):
+            self.name_mappings.append((function.__name__, function.LLMEasyTools_schema_name))
 
         tool_schema = self.generator.generate_tool_schema(function)
         self.tool_schemas.append(tool_schema)
