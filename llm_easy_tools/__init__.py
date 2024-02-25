@@ -188,28 +188,27 @@ class ToolBox:
         for name, method in methods:
             if name.startswith('_'):
                 continue
-            self.register_tool(method)
+            self.register_function(method)
 
-    def register_tool(self, function_or_model):
-        # Check if function_or_model is a class
-        if inspect.isclass(function_or_model):
-            if issubclass(function_or_model, BaseModel):
-                model_class = function_or_model
-                tool_name = model_class.__name__
+    def register_model(self, model_class):
+        if not inspect.isclass(model_class) or not issubclass(model_class, BaseModel):
+            raise TypeError("Class must be a Pydantic model class - a subclass of BaseModel")
 
-                def function(obj: model_class) -> model_class:
-                    return obj
+        tool_name = model_class.__name__
+        def function(obj: model_class) -> model_class:
+            return obj
+        function.__name__ = f"{tool_name}"
 
-                function.__name__ = f"{tool_name}"
-            else:
-                raise TypeError("Class must be a Pydantic model class - a subclass of BaseModel")
-        elif inspect.isroutine(function_or_model):
-            function = function_or_model
-        else:
-            raise TypeError("Parameter must be either a one-parameter function or a Pydantic model class - a subclass of BaseModel")
+        self.register_function(function)
+
+
+    def register_function(self, function):
+        if not inspect.isroutine(function):
+            raise TypeError("Parameter must be a function")
 
         if function.__name__ in self.tool_registry:
             raise Exception(f"Trying to register {function.__name__} which is already registered")
+
         parameters = inspect.signature(function).parameters
         if len(parameters) != 1:
             raise TypeError(
@@ -217,8 +216,6 @@ class ToolBox:
 
         name, param = list(parameters.items())[0]
         param_class = param.annotation
-
-        # Check if param_class is a class and a subclass of BaseModel
         if not inspect.isclass(param_class) or not issubclass(param_class, BaseModel):
             raise TypeError(
                 f"The only parameter of function {function.__name__} is not a subclass of pydantic BaseModel")

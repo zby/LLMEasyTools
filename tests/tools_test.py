@@ -90,7 +90,7 @@ class UserDetail(BaseModel):
 
 def test_process_with_identity():
     toolbox = ToolBox()
-    toolbox.register_tool(UserDetail)
+    toolbox.register_model(UserDetail)
     assert "UserDetail" in toolbox.tool_registry
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
@@ -99,7 +99,7 @@ def test_process_with_identity():
 
 def process_response():
     toolbox = ToolBox()
-    toolbox.register_tool(UserDetail)
+    toolbox.register_function(UserDetail)
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
     response = Mock(choices=[Mock(message=Mock(tool_calls=[Mock(function=function_call)]))])
@@ -123,7 +123,7 @@ def test_register_tool():
     toolbox = ToolBox()
 
     # Test with correct parameters
-    toolbox.register_tool(example_tool)
+    toolbox.register_function(example_tool)
     assert 'example_tool' in toolbox.tool_registry
     function_info = toolbox.tool_registry['example_tool']
     assert function_info["function"] == example_tool
@@ -136,26 +136,26 @@ def test_register_tool():
     # Test with function with more than one parameter
     with pytest.raises(TypeError):
         def two_parameters(a, b): pass
-        toolbox.register_tool(two_parameters)
+        toolbox.register_function(two_parameters)
 
     # Test with function with no parameters
     with pytest.raises(TypeError):
         def no_parameters(): pass
-        toolbox.register_tool(no_parameters)
+        toolbox.register_function(no_parameters)
 
     # Test with function having a parameter which isn't subclass of BaseModel
     with pytest.raises(TypeError):
         def wrong_parameter(a: Any): pass
-        toolbox.register_tool(wrong_parameter)
+        toolbox.register_function(wrong_parameter)
 
-    toolbox.register_tool(bad_name_tool)
+    toolbox.register_function(bad_name_tool)
     assert 'bad_name_tool' in toolbox.tool_registry
     function_info = toolbox.tool_registry['bad_name_tool']
     assert function_info["function"] == bad_name_tool
     assert function_info["param_class"] == Tool
     assert toolbox.schema_name_to_func('good_name') == 'bad_name_tool'
 
-def test_register_tool_with_model():
+def test_register_model():
     class Tool(BaseModel):
         name: str
 
@@ -163,7 +163,7 @@ def test_register_tool_with_model():
         query: str
 
     toolbox = ToolBox()
-    toolbox.register_tool(Tool)
+    toolbox.register_model(Tool)
 
     identity_function = toolbox.tool_registry['Tool']["function"]
     assert callable(identity_function)
@@ -172,7 +172,7 @@ def test_register_tool_with_model():
     assert len(toolbox.tool_schemas) == 1
     assert toolbox.tool_schemas[0]['function']['name'] == 'Tool'
 
-    toolbox.register_tool(WikiSearch)
+    toolbox.register_model(WikiSearch)
     identity_function = toolbox.tool_registry['WikiSearch']["function"]
     assert callable(identity_function)
     assert identity_function(WikiSearch(query="test")) == WikiSearch(query="test")

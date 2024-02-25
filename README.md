@@ -46,20 +46,23 @@ from pprint import pprint
 
 client = OpenAI()
 
+
 # Define a Pydantic model for your tool's input
 class UserDetail(BaseModel):
     name: str
     city: str
 
+
 # Create a ToolBox instance
 toolbox = ToolBox()
 
 # Register your tool - if a class is passed an identity function over it is registered
-toolbox.register_tool(UserDetail)
+toolbox.register_function(UserDetail)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Extract user details from the following sentence: John lives in Warsaw and likes banana"}],
+    messages=[{"role": "user",
+               "content": "Extract user details from the following sentence: John lives in Warsaw and likes banana"}],
     tools=toolbox.tool_schemas,
     tool_choice="auto",
 )
@@ -80,7 +83,8 @@ Output:
 def contact_user(user: UserDetail):
     return f"User {user.name} from {user.city} was contacted"
 
-toolbox.register_tool(contact_user)
+
+toolbox.register_function(contact_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",

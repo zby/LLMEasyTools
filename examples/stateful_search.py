@@ -57,8 +57,8 @@ doc_manager = DocumentManager()
 toolbox = ToolBox()
 
 # Register the methods of the DocumentManager instance
-toolbox.register_tool(doc_manager.search_document)
-toolbox.register_tool(doc_manager.lookup_word)
+toolbox.register_function(doc_manager.search_document)
+toolbox.register_function(doc_manager.lookup_word)
 
 client = OpenAI()
 # Example LLM call to search for a document
