@@ -18,8 +18,8 @@ def contact_user(user: UserDetail):
 # Create a ToolBox instance
 toolbox = ToolBox()
 
-# Register your tool - if a class is passed an identity function over it is registered
-toolbox.register_function(UserDetail)
+# Register your model
+toolbox.register_model(UserDetail)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
