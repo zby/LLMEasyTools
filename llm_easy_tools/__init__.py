@@ -14,6 +14,14 @@ def external_function(schema_name=None):
         return func
     return decorator
 
+def extraction_model(schema_name=None):
+    def class_decorator(cls):
+        setattr(cls, 'LLMEasyTools_extraction_model', True)
+        if schema_name is not None:
+            setattr(cls, 'LLMEasyTools_schema_name', schema_name)
+        return cls
+    return class_decorator
+
 class SchemaGenerator:
     def __init__(self, strict=True, name_mappings=None):
         if name_mappings is None:
@@ -190,15 +198,22 @@ class ToolBox:
         for name, method in methods:
             if hasattr(method, 'LLMEasyTools_external_function'):
                 self.register_function(method)
+        for attr_name in dir(obj.__class__):
+            attr_value = getattr(obj.__class__, attr_name)
+            if isinstance(attr_value, type) and hasattr(attr_value, 'LLMEasyTools_extraction_model'):
+                self.register_model(attr_value)
 
     def register_model(self, model_class):
         if not inspect.isclass(model_class) or not issubclass(model_class, BaseModel):
             raise TypeError("Class must be a Pydantic model class - a subclass of BaseModel")
 
-        tool_name = model_class.__name__
         def function(obj: model_class) -> model_class:
             return obj
-        function.__name__ = f"{tool_name}"
+        function.__name__ = model_class.__name__
+
+        if hasattr(model_class, 'LLMEasyTools_schema_name'):
+            schema_name = model_class.LLMEasyTools_schema_name
+            setattr(function, 'LLMEasyTools_schema_name', schema_name)
 
         self.register_function(function)
 

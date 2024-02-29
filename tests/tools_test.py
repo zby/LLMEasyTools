@@ -2,17 +2,22 @@ import pytest
 import json
 
 from unittest.mock import Mock
-from llm_easy_tools import ToolBox, SchemaGenerator, external_function
+from llm_easy_tools import ToolBox, SchemaGenerator, external_function, extraction_model
 from pydantic import BaseModel
 from typing import Any
 
+
 class ToolParam(BaseModel):
     value: int
+
 
 class AdditionalToolParam(BaseModel):
     value: int
 
 class TestTool:
+
+    class SomeClass(BaseModel):
+        value: int
 
     @external_function()
     def tool_method(self, arg: ToolParam) -> str:
@@ -24,6 +29,16 @@ class TestTool:
 
     def _private_tool_method(self, arg: AdditionalToolParam) -> str:
         return str(arg.value * 4)
+
+    @extraction_model()
+    class User(BaseModel):
+        name: str
+        age: int
+
+    @extraction_model('address')
+    class Address(BaseModel):
+        city: str
+        street: str
 
 
 tool = TestTool()
@@ -38,7 +53,6 @@ def test_toolbox_init():
 
 def test_register_toolset():
     tool_manager = ToolBox()
-    tool = TestTool()
 
     # Test the normal case
     tool_manager.register_toolset(tool)
@@ -46,6 +60,10 @@ def test_register_toolset():
     assert 'TestTool' in tool_manager.tool_sets
     assert 'tool_method' in tool_manager.tool_registry
     assert 'additional_tool_method' in tool_manager.tool_registry
+    assert 'User' in tool_manager.tool_registry
+    assert 'SomeClass' not in tool_manager.tool_registry
+    assert 'Address' in tool_manager.tool_registry
+    assert tool_manager.schema_name_to_func('address') == 'Address'
     assert '_private_tool_method' not in tool_manager.tool_registry
 
     # Test for Exception when a Toolset with same key is being registered
@@ -53,11 +71,12 @@ def test_register_toolset():
         tool_manager.register_toolset(tool)
 
     assert str(exception_info.value) == 'A toolset with key TestTool already exists.'
+
 def test_toolbox_from_object():
     toolbox = ToolBox.toolbox_from_object(tool)
     assert "tool_method" in toolbox.tool_registry
-    assert len(toolbox.tool_registry) == 2
-    assert len(toolbox.tool_schemas) == 2
+    assert len(toolbox.tool_registry) == 4
+    assert len(toolbox.tool_schemas) == 4
 
 def test_schema_name_to_func():
     toolbox = ToolBox(name_mappings=[("tool_method", "TestTool")])
