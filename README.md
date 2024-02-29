@@ -57,7 +57,7 @@ class UserDetail(BaseModel):
 toolbox = ToolBox()
 
 # Register your tool - if a class is passed an identity function over it is registered
-toolbox.register_function(UserDetail)
+toolbox.register_model(UserDetail)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
@@ -84,7 +84,7 @@ def contact_user(user: UserDetail):
     return f"User {user.name} from {user.city} was contacted"
 
 
-toolbox.register_function(contact_user)
+toolbox.register_model(contact_user)
 
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
@@ -103,7 +103,7 @@ Output:
 ['User John from Warsaw was contacted']
 ```
 
-Discover more possibilities and examples in the test suite.
+Discover more possibilities and examples in the examples directory and test suite.
 
 ## License
 

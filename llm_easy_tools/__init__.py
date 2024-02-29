@@ -140,11 +140,9 @@ class ToolBox:
     The function need to take exactly one parameter of a class that is a subclass of pydantic BaseModel.
     If the function is a method it needs to be a bound method with one parameter.
 
-    - `toolbox_from_object(cls, obj, *args, **kwargs)`: Creates a new `ToolBox`
-        instance from an existing object and register all its public methods
-        as LLM tools. Parameters are:
-        - `obj`: The object to register tools from.
-        - `*args, **kwargs`: Additional parameters passed to `__init__` method.
+    - register_model(class): Registers a pydantic model
+
+    - register_toolset(object): Registers all methods marked as 'external_function'.
 
     - `process(self, function_call)`: Dispatch a function call from an LLM response to the registered function
         that matches the function name.
