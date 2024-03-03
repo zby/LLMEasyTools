@@ -81,6 +81,12 @@ def test_empty_model_schemas():
 
     generator = SchemaGenerator()
 
+    # Function without docstring and EmptyModelWithDoc as parameter
+    result = generator.function_schema(function_no_doc_with_doc_model)
+    assert result['name'] == 'function_no_doc_with_doc_model'
+    assert result['description'] == 'This is an empty model with a docstring.'
+    assert 'parameters' not in result
+
     result = generator.function_schema(function_with_doc)
     # Function with docstring and EmptyModel as parameter
     assert result['name'] == 'function_with_doc'
@@ -93,11 +99,6 @@ def test_empty_model_schemas():
     assert result['description'] == ''
     assert 'parameters' not in result
 
-    # Function without docstring and EmptyModelWithDoc as parameter
-    result = generator.function_schema(function_no_doc_with_doc_model)
-    assert result['name'] == 'function_no_doc_with_doc_model'
-    assert result['description'] == 'This is an empty model with a docstring.'
-    assert 'parameters' not in result
 
 def test_nested():
     class Spam(BaseModel):
@@ -152,3 +153,14 @@ def test_tools():
     assert len(tools) == 2
     assert tools[0]['function']['name'] == 'simple_function'
     assert tools[1]['function']['name'] == 'new_custom_name'
+
+def test_merge_schemas():
+
+    class Reflection(BaseModel):
+        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
+        next_actions_plan: str = Field(..., description="What you plan to do next and why")
+
+    generator = SchemaGenerator()
+    prefix_class = Reflection
+    function_schema = generator.function_schema(simple_function, prefix_class=Reflection)
+    assert len(function_schema['parameters']['properties']) == 4

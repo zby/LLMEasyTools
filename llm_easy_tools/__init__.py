@@ -54,7 +54,7 @@ class SchemaGenerator:
 
     from typing import Callable, Any, Dict
 
-    def function_schema(self, function: Callable) -> Dict[str, Any]:
+    def function_schema(self, function: Callable, prefix_class=None) -> Dict[str, Any]:
         description = ''
         parameters = inspect.signature(function).parameters
         if not len(parameters) == 1:
@@ -70,6 +70,7 @@ class SchemaGenerator:
         params_schema = param_class.model_json_schema()
         self._recursive_purge_titles(params_schema)
 
+
         if 'description' in params_schema:
             description = params_schema['description']
             params_schema.pop('description')
@@ -82,10 +83,23 @@ class SchemaGenerator:
         schema = {
             "name": self.func_name_to_schema(function.__name__),
             "description": description,
+            "parameters": params_schema
         }
-        if len(param_class.__annotations__) > 0:  # if the model is not empty,
-            schema["parameters"] = params_schema
 
+        if prefix_class is not None:
+            if not issubclass(prefix_class, BaseModel):
+                raise TypeError(
+                    f"The prefix_class is not a subclass of pydantic BaseModel")
+            prefix_schema = prefix_class.model_json_schema()
+            self._recursive_purge_titles(prefix_schema)
+            prefix_schema.pop('description', None)
+            prefix_schema['required'].extend(schema['parameters']['required'])
+            for key, value in schema['parameters']['properties'].items():
+                prefix_schema['properties'][key] = value
+            schema['parameters'] = prefix_schema
+
+        if len(schema['parameters']['properties']) == 0:  # if the parameters list is empty,
+            schema.pop('parameters')
         return schema
 
     def generate_tools(self, *functions: Callable) -> list:
