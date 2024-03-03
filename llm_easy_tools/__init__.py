@@ -54,29 +54,34 @@ class SchemaGenerator:
 
     from typing import Callable, Any, Dict
 
+    def get_model_schema(self, class_ref: BaseModel):
+        # type hints seem not enforced in our test case
+        if not issubclass(class_ref, BaseModel):
+            raise TypeError(
+                f"The given class reference is not a subclass of pydantic BaseModel"
+            )
+        class_schema = class_ref.model_json_schema()
+        self._recursive_purge_titles(class_schema)
+
+        description = class_schema.pop('description', '')
+        return class_schema, description
+
     def function_schema(self, function: Callable, prefix_class=None) -> Dict[str, Any]:
-        description = ''
         parameters = inspect.signature(function).parameters
         if not len(parameters) == 1:
-            raise TypeError(f"Function {function.__name__} requires {len(parameters)} parameters but we generate schemas only for one parameter functions")
-
+            raise TypeError(
+                f"Function {function.__name__} requires {len(parameters)} parameters but we generate schemas only for one parameter functions"
+            )
         # there's exactly one parameter
         name, param = list(parameters.items())[0]
         param_class = param.annotation
+        params_schema, description = self.get_model_schema(param_class)
 
-        if not issubclass(param_class, BaseModel):
-            raise TypeError(f"The only parameter of function {function.__name__} is not a subclass of pydantic BaseModel")
-
-        params_schema = param_class.model_json_schema()
-        self._recursive_purge_titles(params_schema)
-
-
-        if 'description' in params_schema:
-            description = params_schema['description']
-            params_schema.pop('description')
         if function.__doc__:
             if description and self.strict:
-                raise ValueError(f"Both function '{function.__name__}' and the parameter class '{param_class.__name__}' have descriptions")
+                raise ValueError(
+                    f"Both function '{function.__name__}' and the parameter class '{param_class.__name__}' have descriptions"
+                )
             else:
                 description = parse(function.__doc__).short_description
 
@@ -87,12 +92,8 @@ class SchemaGenerator:
         }
 
         if prefix_class is not None:
-            if not issubclass(prefix_class, BaseModel):
-                raise TypeError(
-                    f"The prefix_class is not a subclass of pydantic BaseModel")
-            prefix_schema = prefix_class.model_json_schema()
-            self._recursive_purge_titles(prefix_schema)
-            prefix_schema.pop('description', None)
+            prefix_schema, _ = self.get_model_schema(prefix_class)
+
             prefix_schema['required'].extend(schema['parameters']['required'])
             for key, value in schema['parameters']['properties'].items():
                 prefix_schema['properties'][key] = value
@@ -100,6 +101,7 @@ class SchemaGenerator:
 
         if len(schema['parameters']['properties']) == 0:  # if the parameters list is empty,
             schema.pop('parameters')
+
         return schema
 
     def generate_tools(self, *functions: Callable) -> list:
