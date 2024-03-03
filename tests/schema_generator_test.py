@@ -164,3 +164,5 @@ def test_merge_schemas():
     prefix_class = Reflection
     function_schema = generator.function_schema(simple_function, prefix_class=Reflection)
     assert len(function_schema['parameters']['properties']) == 4
+    first_param_name = list(function_schema['parameters']['properties'].keys())[0]
+    assert first_param_name == 'relevancy' # First parameters from the prefix class
