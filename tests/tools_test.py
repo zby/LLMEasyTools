@@ -151,9 +151,9 @@ def test_register_tool():
     assert function_info["function"] == example_tool
     assert function_info["param_class"] == Tool
     assert len(toolbox.tool_schemas()) == 1
-    assert len(toolbox._function_schemas) == 1
+    assert len(toolbox.function_schemas()) == 1
     assert toolbox.tool_schemas()[0]['function']['name'] == 'example_tool'
-    assert toolbox._function_schemas[0]['name'] == 'example_tool'
+    assert toolbox.function_schemas()[0]['name'] == 'example_tool'
 
     # Test with function with more than one parameter
     with pytest.raises(TypeError):

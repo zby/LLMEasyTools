@@ -168,15 +168,17 @@ class ToolBox:
     - `process(self, function_call)`: Dispatch a function call from an LLM response to the registered function
         that matches the function name.
 
+    - `tool_schemas(self)`: A list of tool schemas that can be used in an LLM call.
+
+    - `function_schemas(self)`: A list of function schemas that can be used in an LLM call (in older API versions).
+
     Attributes:
     - `name_mappings`: A list of tuples mapping names used in LLM schemas and tool function names used in code.
     - `tool_registry`: A dictionary mapping tool function names to their info
-    - `tool_schemas`: A list of tool schemas that can be used in an LLM call.
     """
     def __init__(self, strict=True, name_mappings=None,
                  tool_registry=None, generator=None,
-                 tool_schemas=None, tool_sets=None,
-                 function_schemas=None,
+                 tool_sets=None,
                  ):
         self.strict = strict
         if tool_registry is None:
@@ -185,15 +187,9 @@ class ToolBox:
         if name_mappings is None:
             name_mappings = []
         self.name_mappings = name_mappings
-        if tool_schemas is None:
-            tool_schemas = []
-        self._tool_schemas = tool_schemas
         if tool_sets is None:
             tool_sets = {}
         self.tool_sets = tool_sets
-        if function_schemas is None:
-            function_schemas = []
-        self._function_schemas = function_schemas
 
         if generator is None:
             generator = SchemaGenerator(strict=self.strict, name_mappings=self.name_mappings)
@@ -201,10 +197,12 @@ class ToolBox:
 
 
     def tool_schemas(self):
-        return self._tool_schemas
+        tool_schemas = [func_info["tool_schema"] for func_info in self.tool_registry.values()]
+        return tool_schemas
 
     def function_schemas(self):
-        return self._function_schemas
+        function_schemas = [func_info["function_schema"] for func_info in self.tool_registry.values()]
+        return function_schemas
 
     @classmethod
     def toolbox_from_object(cls, obj, *args, **kwargs):
@@ -266,9 +264,7 @@ class ToolBox:
             self.name_mappings.append((function.__name__, function.LLMEasyTools_schema_name))
 
         tool_schema = self.generator.generate_tool_schema(function)
-        self._tool_schemas.append(tool_schema)
         function_schema = self.generator.function_schema(function)
-        self._function_schemas.append(function_schema)
         self.tool_registry[function.__name__] = {
             "function": function,
             "param_class": param_class,
