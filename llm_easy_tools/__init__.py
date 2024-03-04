@@ -168,9 +168,9 @@ class ToolBox:
     - `process(self, function_call)`: Dispatch a function call from an LLM response to the registered function
         that matches the function name.
 
-    - `tool_schemas(self)`: A list of tool schemas that can be used in an LLM call.
+    - `tool_schemas(self, prefix_class=None)`: A list of tool schemas that can be used in an LLM call.
 
-    - `function_schemas(self)`: A list of function schemas that can be used in an LLM call (in older API versions).
+    - `function_schemas(self, prefix_clas=None)`: A list of function schemas that can be used in an LLM call (for older API versions).
 
     Attributes:
     - `name_mappings`: A list of tuples mapping names used in LLM schemas and tool function names used in code.
@@ -196,13 +196,19 @@ class ToolBox:
         self.generator = generator
 
 
-    def tool_schemas(self):
-        tool_schemas = [func_info["tool_schema"] for func_info in self.tool_registry.values()]
+    def tool_schemas(self, prefix_class=None):
+        tool_schemas = [{"type": "function", "function": function_schema} for function_schema in self.function_schemas(prefix_class)]
         return tool_schemas
 
-    def function_schemas(self):
-        function_schemas = [func_info["function_schema"] for func_info in self.tool_registry.values()]
+    def function_schemas(self, prefix_class=None):
+        function_schemas = []
+        for func_info in self.tool_registry.values():
+            schema = func_info["function_schema"]
+            if prefix_class:
+                schema = self.generator.prefix_schema(prefix_class, schema)
+            function_schemas.append(schema)
         return function_schemas
+
 
     @classmethod
     def toolbox_from_object(cls, obj, *args, **kwargs):

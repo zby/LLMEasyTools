@@ -3,7 +3,7 @@ import json
 
 from unittest.mock import Mock
 from llm_easy_tools import ToolBox, SchemaGenerator, external_function, extraction_model
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Any
 
 
@@ -201,6 +201,25 @@ def test_register_model():
     assert toolbox.tool_registry['WikiSearch']["param_class"] is WikiSearch
     assert len(toolbox.tool_schemas()) == 2
     assert toolbox.tool_schemas()[1]['function']['name'] == 'WikiSearch'
+
+def test_prefixing():
+    class Tool(BaseModel):
+        name: str
+
+    class Reflection(BaseModel):
+        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
+
+    def example_tool(tool: Tool):
+        print('Running test tool')
+
+    toolbox = ToolBox()
+    toolbox.register_function(example_tool)
+    tool_schemas = toolbox.tool_schemas(prefix_class=Reflection)
+    assert len(tool_schemas) == 1
+    function_schema = tool_schemas[0]['function']
+    first_param_name = list(function_schema['parameters']['properties'].keys())[0]
+    assert first_param_name == 'relevancy'
+
 
 
 pytest.main()
