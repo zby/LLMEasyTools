@@ -285,29 +285,40 @@ class ToolBox:
                 return fname
         return schema_name
 
-    def process_response(self, response, choice_num=0):
+    def process_response(self, response, choice_num=0, prefix_class=None):
         results = []
         if response.choices[choice_num].message.function_call:
             function_call = response.choices[choice_num].message.function_call
-            results.append(self.process_function(function_call))
+            result, prefix = self.process_function(function_call, prefix_class)
+            results.append(result)
         if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
-                results.append(self.process_function(tool_call.function))
-        return results
+                result, prefix = self.process_function(tool_call.function, prefix_class)
+                results.append(result)
+        return results, prefix
 
-    def process_function(self, function_call):
+    def process_function(self, function_call, prefix_class=None):
         tool_args = json.loads(function_call.arguments)
         tool_name = function_call.name
-        return self._process_unpacked(tool_name, tool_args)
+        return self._process_unpacked(tool_name, tool_args, prefix_class)
 
-    def _process_unpacked(self, tool_name, tool_args):
+    def _process_unpacked(self, tool_name, tool_args, prefix_class=None):
         function_name = self.schema_name_to_func(tool_name)
         if function_name not in self.tool_registry:
             raise ValueError(f"Unknown tool name: {tool_name}")
+        if prefix_class is not None:
+            prefix_args = {}
+            for key in list(tool_args.keys()):  # copy keys to list because we modify the dict while iterating over it
+                if key in prefix_class.__annotations__:
+                    prefix_args[key] = tool_args.pop(key)
+            prefix = prefix_class(**prefix_args)
+        else:
+            prefix = None
+
         function_info = self.tool_registry[function_name]
         param_class = function_info["param_class"]
         function = function_info["function"]
         param = param_class(**tool_args)
         observations = function(param)
-        return observations
+        return observations, prefix
 

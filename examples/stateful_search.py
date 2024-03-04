@@ -72,7 +72,7 @@ response_search = client.chat.completions.create(
 
 # Process the response to search for the document
 
-results_search = toolbox.process_response(response_search)
+results_search, _ = toolbox.process_response(response_search)
 print(results_search)
 
 # Example LLM call to look up a word in the current document
@@ -83,7 +83,7 @@ response_lookup = client.chat.completions.create(
     tool_choice="auto",
 )
 # Process the response to look up the word
-results_lookup = toolbox.process_response(response_lookup)
+results_lookup, _ = toolbox.process_response(response_lookup)
 print(results_lookup)
 
 
