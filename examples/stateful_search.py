@@ -66,7 +66,7 @@ client = OpenAI()
 response_search = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Find a document about AI"}],
-    tools=toolbox.tool_schemas,
+    tools=toolbox.tool_schemas(),
     tool_choice="auto"
 )
 
@@ -79,7 +79,7 @@ print(results_search)
 response_lookup = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Look up the word 'evolving'"}],
-    tools=toolbox.tool_schemas,
+    tools=toolbox.tool_schemas(),
     tool_choice="auto",
 )
 # Process the response to look up the word

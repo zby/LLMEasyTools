@@ -48,7 +48,7 @@ def test_toolbox_init():
     assert toolbox.strict == True
     assert toolbox.tool_registry == {}
     assert toolbox.name_mappings == []
-    assert toolbox.tool_schemas == []
+    assert toolbox.tool_schemas() == []
     assert isinstance(toolbox.generator, SchemaGenerator)
 
 def test_register_toolset():
@@ -76,7 +76,7 @@ def test_toolbox_from_object():
     toolbox = ToolBox.toolbox_from_object(tool)
     assert "tool_method" in toolbox.tool_registry
     assert len(toolbox.tool_registry) == 4
-    assert len(toolbox.tool_schemas) == 4
+    assert len(toolbox.tool_schemas()) == 4
 
 def test_schema_name_to_func():
     toolbox = ToolBox(name_mappings=[("tool_method", "TestTool")])
@@ -150,10 +150,10 @@ def test_register_tool():
     function_info = toolbox.tool_registry['example_tool']
     assert function_info["function"] == example_tool
     assert function_info["param_class"] == Tool
-    assert len(toolbox.tool_schemas) == 1
-    assert len(toolbox.function_schemas) == 1
-    assert toolbox.tool_schemas[0]['function']['name'] == 'example_tool'
-    assert toolbox.function_schemas[0]['name'] == 'example_tool'
+    assert len(toolbox.tool_schemas()) == 1
+    assert len(toolbox._function_schemas) == 1
+    assert toolbox.tool_schemas()[0]['function']['name'] == 'example_tool'
+    assert toolbox._function_schemas[0]['name'] == 'example_tool'
 
     # Test with function with more than one parameter
     with pytest.raises(TypeError):
@@ -191,16 +191,16 @@ def test_register_model():
     assert callable(identity_function)
     assert identity_function(Tool(name="test")) == Tool(name="test")
     assert toolbox.tool_registry['Tool']["param_class"] is Tool
-    assert len(toolbox.tool_schemas) == 1
-    assert toolbox.tool_schemas[0]['function']['name'] == 'Tool'
+    assert len(toolbox.tool_schemas()) == 1
+    assert toolbox.tool_schemas()[0]['function']['name'] == 'Tool'
 
     toolbox.register_model(WikiSearch)
     identity_function = toolbox.tool_registry['WikiSearch']["function"]
     assert callable(identity_function)
     assert identity_function(WikiSearch(query="test")) == WikiSearch(query="test")
     assert toolbox.tool_registry['WikiSearch']["param_class"] is WikiSearch
-    assert len(toolbox.tool_schemas) == 2
-    assert toolbox.tool_schemas[1]['function']['name'] == 'WikiSearch'
+    assert len(toolbox.tool_schemas()) == 2
+    assert toolbox.tool_schemas()[1]['function']['name'] == 'WikiSearch'
 
 
 pytest.main()

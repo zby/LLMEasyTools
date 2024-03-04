@@ -1,4 +1,5 @@
 import inspect
+import copy
 import json
 from typing import Any, Dict, get_type_hints
 
@@ -66,7 +67,7 @@ class SchemaGenerator:
         description = class_schema.pop('description', '')
         return class_schema, description
 
-    def function_schema(self, function: Callable, prefix_class=None) -> Dict[str, Any]:
+    def function_schema(self, function: Callable) -> Dict[str, Any]:
         parameters = inspect.signature(function).parameters
         if not len(parameters) == 1:
             raise TypeError(
@@ -91,18 +92,22 @@ class SchemaGenerator:
             "parameters": params_schema
         }
 
-        if prefix_class is not None:
-            prefix_schema, _ = self.get_model_schema(prefix_class)
-
-            prefix_schema['required'].extend(schema['parameters']['required'])
-            for key, value in schema['parameters']['properties'].items():
-                prefix_schema['properties'][key] = value
-            schema['parameters'] = prefix_schema
-
         if len(schema['parameters']['properties']) == 0:  # if the parameters list is empty,
             schema.pop('parameters')
 
         return schema
+
+    def prefix_schema(self, prefix_class, schema):
+        new_schema = copy.copy(schema)  # Create a shallow copy of the schema
+        prefix_schema, _ = self.get_model_schema(prefix_class)
+        prefix_schema['required'].extend(new_schema['parameters']['required'])
+        for key, value in new_schema['parameters']['properties'].items():
+            prefix_schema['properties'][key] = value
+        new_schema['parameters'] = prefix_schema
+        if len(new_schema['parameters']['properties']) == 0:  # If the parameters list is empty
+            new_schema.pop('parameters')
+        return new_schema
+
 
     def generate_tools(self, *functions: Callable) -> list:
         """
@@ -182,17 +187,24 @@ class ToolBox:
         self.name_mappings = name_mappings
         if tool_schemas is None:
             tool_schemas = []
-        self.tool_schemas = tool_schemas
+        self._tool_schemas = tool_schemas
         if tool_sets is None:
             tool_sets = {}
         self.tool_sets = tool_sets
         if function_schemas is None:
             function_schemas = []
-        self.function_schemas = function_schemas
+        self._function_schemas = function_schemas
 
         if generator is None:
             generator = SchemaGenerator(strict=self.strict, name_mappings=self.name_mappings)
         self.generator = generator
+
+
+    def tool_schemas(self):
+        return self._tool_schemas
+
+    def function_schemas(self):
+        return self._function_schemas
 
     @classmethod
     def toolbox_from_object(cls, obj, *args, **kwargs):
@@ -254,9 +266,9 @@ class ToolBox:
             self.name_mappings.append((function.__name__, function.LLMEasyTools_schema_name))
 
         tool_schema = self.generator.generate_tool_schema(function)
-        self.tool_schemas.append(tool_schema)
+        self._tool_schemas.append(tool_schema)
         function_schema = self.generator.function_schema(function)
-        self.function_schemas.append(function_schema)
+        self._function_schemas.append(function_schema)
         self.tool_registry[function.__name__] = {
             "function": function,
             "param_class": param_class,

@@ -161,8 +161,8 @@ def test_merge_schemas():
         next_actions_plan: str = Field(..., description="What you plan to do next and why")
 
     generator = SchemaGenerator()
-    prefix_class = Reflection
-    function_schema = generator.function_schema(simple_function, prefix_class=Reflection)
-    assert len(function_schema['parameters']['properties']) == 4
-    first_param_name = list(function_schema['parameters']['properties'].keys())[0]
-    assert first_param_name == 'relevancy' # First parameters from the prefix class
+    function_schema = generator.function_schema(simple_function)
+    new_schema = generator.prefix_schema(Reflection, function_schema)
+    assert len(new_schema['parameters']['properties']) == 4
+    first_param_name = list(new_schema['parameters']['properties'].keys())[0]
+    assert first_param_name == 'relevancy' # First parameters from the prefix class/

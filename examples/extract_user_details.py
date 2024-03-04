@@ -24,7 +24,7 @@ toolbox.register_model(UserDetail)
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Extract user details from the following sentence: John lives in Warsaw and likes banana"}],
-    tools=toolbox.tool_schemas,
+    tools=toolbox.tool_schemas(),
     tool_choice="auto",
 )
 # There might be more than one tool calls and more than one result
@@ -37,7 +37,7 @@ toolbox.register_function(contact_user)
 response = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Contact John. John lives in Warsaw"}],
-    tools=toolbox.tool_schemas,
+    tools=toolbox.tool_schemas(),
     tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
 # There might be more than one tool calls and more than one result
