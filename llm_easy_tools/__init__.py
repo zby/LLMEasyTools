@@ -285,40 +285,43 @@ class ToolBox:
                 return fname
         return schema_name
 
-    def process_response(self, response, choice_num=0, prefix_class=None):
+    def process_response(self, response, choice_num=0):
         results = []
         if response.choices[choice_num].message.function_call:
             function_call = response.choices[choice_num].message.function_call
-            result, prefix = self.process_function(function_call, prefix_class)
+            result = self.process_function(function_call)
             results.append(result)
         if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
-                result, prefix = self.process_function(tool_call.function, prefix_class)
+                result = self.process_function(tool_call.function)
                 results.append(result)
-        return results, prefix
+        return results
 
     def process_function(self, function_call, prefix_class=None):
         tool_args = json.loads(function_call.arguments)
+        if prefix_class is not None:
+            # todo make better API for returning the prefix
+            self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
         tool_name = function_call.name
-        return self._process_unpacked(tool_name, tool_args, prefix_class)
+        return self._process_unpacked(tool_name, tool_args)
 
-    def _process_unpacked(self, tool_name, tool_args, prefix_class=None):
+    def _process_unpacked(self, tool_name, tool_args):
         function_name = self.schema_name_to_func(tool_name)
         if function_name not in self.tool_registry:
             raise ValueError(f"Unknown tool name: {tool_name}")
-        if prefix_class is not None:
-            prefix_args = {}
-            for key in list(tool_args.keys()):  # copy keys to list because we modify the dict while iterating over it
-                if key in prefix_class.__annotations__:
-                    prefix_args[key] = tool_args.pop(key)
-            prefix = prefix_class(**prefix_args)
-        else:
-            prefix = None
-
         function_info = self.tool_registry[function_name]
         param_class = function_info["param_class"]
         function = function_info["function"]
         param = param_class(**tool_args)
         observations = function(param)
-        return observations, prefix
+        return observations
+
+    def _extract_prefix_unpacked(self, tool_args, prefix_class):
+        # modifies tool_args
+        prefix_args = {}
+        for key in list(tool_args.keys()):  # copy keys to list because we modify the dict while iterating over it
+            if key in prefix_class.__annotations__:
+                prefix_args[key] = tool_args.pop(key)
+        prefix = prefix_class(**prefix_args)
+        return(prefix)
 

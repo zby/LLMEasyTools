@@ -28,6 +28,6 @@ response = client.chat.completions.create(
     function_call= "auto",
 )
 # There might be more than one tool calls and more than one result
-results, _ = toolbox.process_response(response)
+results = toolbox.process_response(response)
 
 pprint(results)

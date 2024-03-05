@@ -92,12 +92,12 @@ class FunctionCallMock:
 def test_process():
     toolbox = ToolBox.toolbox_from_object(tool)
     function_call = FunctionCallMock(name="tool_method", arguments=json.dumps(ToolParam(value=2).model_dump()))
-    result, _ = toolbox.process_function(function_call)
+    result = toolbox.process_function(function_call)
     assert result == 'executed tool_method with param: value=2'
 
     toolbox = ToolBox.toolbox_from_object(tool, name_mappings=[("additional_tool_method", "custom_name")])
     function_call = FunctionCallMock(name="custom_name", arguments=json.dumps(ToolParam(value=3).model_dump()))
-    result, _ = toolbox.process_function(function_call)
+    result = toolbox.process_function(function_call)
     assert result == "executed additional_tool_method with param: value=3"
 
     # Test with unknown function call name
@@ -116,7 +116,7 @@ def test_process_with_identity():
     assert "UserDetail" in toolbox.tool_registry
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
-    result, _ = toolbox.process_function(function_call)
+    result = toolbox.process_function(function_call)
     assert result == original_user
 
 def process_response():
@@ -125,7 +125,7 @@ def process_response():
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
     response = Mock(choices=[Mock(message=Mock(tool_calls=[Mock(function=function_call)]))])
-    results, _ = toolbox.process_response(response)
+    results = toolbox.process_response(response)
     assert len(results) == 1
     assert results[0] == original_user
 
@@ -221,9 +221,9 @@ def test_prefixing():
     assert first_param_name == 'relevancy'
 
     args = { 'relevancy': 'good', 'name': 'hammer'}
-    result, prefix = toolbox._process_unpacked('example_tool', args, Reflection)
+    prefix = toolbox._extract_prefix_unpacked(args, Reflection)
     assert isinstance(prefix, Reflection)
-    assert result == 'test tool result'
+    assert 'reflection' not in args # prefix params extracted
 
 
 

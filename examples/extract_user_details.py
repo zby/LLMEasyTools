@@ -28,7 +28,7 @@ response = client.chat.completions.create(
     tool_choice="auto",
 )
 # There might be more than one tool calls and more than one result
-results, _ = toolbox.process_response(response)
+results = toolbox.process_response(response)
 
 pprint(results)
 
@@ -41,6 +41,6 @@ response = client.chat.completions.create(
     tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
 # There might be more than one tool calls and more than one result
-results, _ = toolbox.process_response(response)
+results = toolbox.process_response(response)
 
 pprint(results)
