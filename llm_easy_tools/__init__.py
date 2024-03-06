@@ -98,11 +98,12 @@ class SchemaGenerator:
         return schema
 
     def prefix_schema(self, prefix_class, schema):
-        new_schema = copy.copy(schema)  # Create a shallow copy of the schema
         prefix_schema, _ = self.get_model_schema(prefix_class)
-        prefix_schema['required'].extend(new_schema['parameters']['required'])
-        for key, value in new_schema['parameters']['properties'].items():
-            prefix_schema['properties'][key] = value
+        if 'parameters' in schema:
+            prefix_schema['required'].extend(schema['parameters']['required'])
+            for key, value in schema['parameters']['properties'].items():
+                prefix_schema['properties'][key] = value
+        new_schema = copy.copy(schema)  # Create a shallow copy of the schema
         new_schema['parameters'] = prefix_schema
         if len(new_schema['parameters']['properties']) == 0:  # If the parameters list is empty
             new_schema.pop('parameters')
@@ -121,15 +122,15 @@ class SchemaGenerator:
         """
         tools_array = []
         for function in functions:
-            tools_array.append(self.generate_tool_schema(function))
+            tools_array.append(self.tool_schema(self.function_schema(function)))
         return tools_array
 
-    def generate_tool_schema(self, function: Callable) -> dict:
-        function_schema = self.function_schema(function)
+    def tool_schema(self, function_schema: dict) -> dict:
         return {
             "type": "function",
             "function": function_schema,
         }
+
     def generate_functions(self, *functions: Callable) -> list:
         """
         Generates a functions description array for multiple functions.
@@ -197,8 +198,14 @@ class ToolBox:
 
 
     def tool_schemas(self, prefix_class=None):
-        tool_schemas = [{"type": "function", "function": function_schema} for function_schema in self.function_schemas(prefix_class)]
+        tool_schemas = [self.generator.tool_schema(function_schema) for function_schema in self.function_schemas(prefix_class)]
         return tool_schemas
+
+    def get_tool_schema(self, name, prefix_class=None):
+        for function_schema in self.function_schemas(prefix_class):
+            if function_schema['name'] == name:
+                return self.generator.tool_schema(function_schema)
+        raise KeyError(f'No function "{name}" registered')
 
     def function_schemas(self, prefix_class=None):
         function_schemas = []
@@ -269,8 +276,8 @@ class ToolBox:
         if hasattr(function, 'LLMEasyTools_schema_name'):
             self.name_mappings.append((function.__name__, function.LLMEasyTools_schema_name))
 
-        tool_schema = self.generator.generate_tool_schema(function)
         function_schema = self.generator.function_schema(function)
+        tool_schema = self.generator.tool_schema(function_schema)
         self.tool_registry[function.__name__] = {
             "function": function,
             "param_class": param_class,

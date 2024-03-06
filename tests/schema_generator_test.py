@@ -154,6 +154,7 @@ def test_tools():
     assert tools[0]['function']['name'] == 'simple_function'
     assert tools[1]['function']['name'] == 'new_custom_name'
 
+
 def test_merge_schemas():
 
     class Reflection(BaseModel):
@@ -164,5 +165,31 @@ def test_merge_schemas():
     function_schema = generator.function_schema(simple_function)
     new_schema = generator.prefix_schema(Reflection, function_schema)
     assert len(new_schema['parameters']['properties']) == 4
+    assert len(new_schema['parameters']['required']) == 3
+    assert len(function_schema['parameters']['properties']) == 2  # the old schema is not changed
+    assert len(function_schema['parameters']['required']) == 1  # the old schema is not changed
     first_param_name = list(new_schema['parameters']['properties'].keys())[0]
     assert first_param_name == 'relevancy' # First parameters from the prefix class/
+
+
+def test_empty_model_merge():
+    class EmptyModel(BaseModel):
+        pass
+
+    def function_no_doc(empty_model: EmptyModel):
+        pass
+
+    class Reflection(BaseModel):
+        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
+        next_actions_plan: str = Field(..., description="What you plan to do next and why")
+
+    generator = SchemaGenerator()
+
+    # Function without docstring and EmptyModelWithDoc as parameter
+    function_schema = generator.function_schema(function_no_doc)
+    assert function_schema['name'] == 'function_no_doc'
+    assert 'parameters' not in function_schema
+
+    new_schema = generator.prefix_schema(Reflection, function_schema)
+    assert len(new_schema['parameters']['properties']) == 2
+
