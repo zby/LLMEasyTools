@@ -107,6 +107,7 @@ class SchemaGenerator:
         new_schema['parameters'] = prefix_schema
         if len(new_schema['parameters']['properties']) == 0:  # If the parameters list is empty
             new_schema.pop('parameters')
+        new_schema['name'] = prefix_class.__name__ + "_and_" + schema['name']
         return new_schema
 
 
@@ -306,10 +307,15 @@ class ToolBox:
 
     def process_function(self, function_call, prefix_class=None):
         tool_args = json.loads(function_call.arguments)
+        tool_name = function_call.name
         if prefix_class is not None:
             # todo make better API for returning the prefix
             self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
-        tool_name = function_call.name
+            prefix_name = prefix_class.__name__
+            if not tool_name.startswith(prefix_name):
+                raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
+            else:
+                tool_name = tool_name[len(prefix_name + '_and_'):]
         return self._process_unpacked(tool_name, tool_args)
 
     def _process_unpacked(self, tool_name, tool_args):

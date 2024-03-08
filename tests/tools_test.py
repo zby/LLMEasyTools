@@ -3,7 +3,7 @@ import json
 
 from unittest.mock import Mock
 from llm_easy_tools import ToolBox, SchemaGenerator, external_function, extraction_model
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from typing import Any
 
 
@@ -226,9 +226,23 @@ def test_prefixing():
     assert 'reflection' not in args # prefix params extracted
 
 
+def test_process_function_with_prefixing():
+    class Reflection(BaseModel):
+        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
 
-
-
+    toolbox = ToolBox()
+    toolbox.register_toolset(tool)
+    prefixed_name = 'Reflection_and_tool_method'
+    no_reflection_function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps(ToolParam(value=2).model_dump()))
+    with pytest.raises(Exception) as exception_info:
+        toolbox.process_function(no_reflection_function_call, prefix_class=Reflection)
+    assert isinstance(exception_info.value, ValidationError)
+    args = ToolParam(value=2).model_dump()
+    args['relevancy'] = 'very good'
+    function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps(args))
+    result = toolbox.process_function(function_call, prefix_class=Reflection)
+    assert result == 'executed tool_method with param: value=2'
+    assert isinstance(toolbox.prefix, Reflection)
 
 
 pytest.main()
