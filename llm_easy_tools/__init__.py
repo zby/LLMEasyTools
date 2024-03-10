@@ -97,7 +97,7 @@ class SchemaGenerator:
 
         return schema
 
-    def prefix_schema(self, prefix_class, schema):
+    def prefix_schema(self, prefix_class, schema, prefix_schema_name=True):
         prefix_schema, _ = self.get_model_schema(prefix_class)
         if 'parameters' in schema:
             prefix_schema['required'].extend(schema['parameters']['required'])
@@ -107,7 +107,8 @@ class SchemaGenerator:
         new_schema['parameters'] = prefix_schema
         if len(new_schema['parameters']['properties']) == 0:  # If the parameters list is empty
             new_schema.pop('parameters')
-        new_schema['name'] = prefix_class.__name__ + "_and_" + schema['name']
+        if prefix_schema_name:
+            new_schema['name'] = prefix_class.__name__ + "_and_" + schema['name']
         return new_schema
 
 
