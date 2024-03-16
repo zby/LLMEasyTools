@@ -210,10 +210,11 @@ class ToolBox:
         return tool_schemas
 
     def get_tool_schema(self, name, prefix_class=None):
-        for function_schema in self.function_schemas(prefix_class):
-            if function_schema['name'] == name:
-                return self.generator.tool_schema(function_schema)
-        raise KeyError(f'No function "{name}" registered')
+        # todo - decide if we want use internal or external name here
+        function_schema = self.tool_registry[name]["function_schema"]
+        if prefix_class:
+            function_schema = self.generator.prefix_schema(prefix_class, function_schema)
+        return self.generator.tool_schema(function_schema)
 
     def function_schemas(self, prefix_class=None):
         function_schemas = []

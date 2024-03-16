@@ -1,10 +1,11 @@
 import pytest
 
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import List, Optional, Union, Literal
+from pydantic import BaseModel, Field, field_validator
 
 from llm_easy_tools import SchemaGenerator
 
+from pprint import pprint
 
 class Foo(BaseModel):
     count: int
@@ -195,3 +196,24 @@ def test_empty_model_merge():
     assert len(new_schema['parameters']['properties']) == 2
     assert new_schema['name'] == 'reflection_and_function_no_doc'
 
+
+def test_union_schema():
+    class Reflection(BaseModel):
+        how_relevant: Union[Literal[1, 2, 3, 4, 5], Literal['1', '2', '3', '4', '5']] = Field(
+            ...,
+            description="Was the last retrieved information relevant for answering this question? Choose 1, 2, 3, 4, or 5."
+        )
+        @field_validator('how_relevant')
+        @classmethod
+        def ensure_int(cls, v):
+            if isinstance(v, str) and v in {'1', '2', '3', '4', '5'}:
+                return int(v)  # Convert to int
+            return v
+
+        why_relevant: str = Field(..., description="Why the retrieved information was relevant?")
+        next_actions_plan: str = Field(..., description="")
+
+    generator = SchemaGenerator()
+
+    prefix_schema, _ = generator.get_model_schema(Reflection)
+    pprint(prefix_schema)
