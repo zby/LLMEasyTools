@@ -192,7 +192,7 @@ def test_register_model():
     assert identity_function(Tool(name="test")) == Tool(name="test")
     assert toolbox.tool_registry['Tool']["param_class"] is Tool
     assert len(toolbox.tool_schemas()) == 1
-    assert toolbox.tool_schemas()[0]['function']['name'] == 'Tool'
+    assert toolbox.tool_schemas()[0]['function']['name'] == 'tool' # by default case_insensitive
 
     toolbox.register_model(WikiSearch)
     identity_function = toolbox.tool_registry['WikiSearch']["function"]
@@ -200,7 +200,7 @@ def test_register_model():
     assert identity_function(WikiSearch(query="test")) == WikiSearch(query="test")
     assert toolbox.tool_registry['WikiSearch']["param_class"] is WikiSearch
     assert len(toolbox.tool_schemas()) == 2
-    assert toolbox.tool_schemas()[1]['function']['name'] == 'WikiSearch'
+    assert toolbox.tool_schemas()[1]['function']['name'] == 'wikisearch'
 
 def test_prefixing():
     class Tool(BaseModel):

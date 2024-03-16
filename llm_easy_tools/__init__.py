@@ -179,11 +179,12 @@ class ToolBox:
     - `name_mappings`: A list of tuples mapping names used in LLM schemas and tool function names used in code.
     - `tool_registry`: A dictionary mapping tool function names to their info
     """
-    def __init__(self, strict=True, name_mappings=None,
+    def __init__(self, strict=True, name_mappings=None, case_insensitive=True,
                  tool_registry=None, generator=None,
                  tool_sets=None,
                  ):
         self.strict = strict
+        self.case_insensitive = case_insensitive
         if tool_registry is None:
             tool_registry = {}
         self.tool_registry = tool_registry
@@ -277,6 +278,9 @@ class ToolBox:
 
         if hasattr(function, 'LLMEasyTools_schema_name'):
             self.name_mappings.append((function.__name__, function.LLMEasyTools_schema_name))
+        elif self.case_insensitive:
+            if not function.__name__.lower() == function.__name__:
+                self.name_mappings.append((function.__name__, function.__name__.lower()))
 
         function_schema = self.generator.function_schema(function)
         tool_schema = self.generator.tool_schema(function_schema)
