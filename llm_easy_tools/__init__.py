@@ -24,10 +24,11 @@ def extraction_model(schema_name=None):
     return class_decorator
 
 class SchemaGenerator:
-    def __init__(self, strict=True, name_mappings=None):
+    def __init__(self, strict=True, name_mappings=None, case_insensitive=True):
         if name_mappings is None:
             name_mappings = []
         self.strict = strict
+        self.case_insensitive = case_insensitive
         self.name_mappings = name_mappings
 
     def func_name_to_schema(self, func_name):
@@ -108,7 +109,11 @@ class SchemaGenerator:
         if len(new_schema['parameters']['properties']) == 0:  # If the parameters list is empty
             new_schema.pop('parameters')
         if prefix_schema_name:
-            new_schema['name'] = prefix_class.__name__ + "_and_" + schema['name']
+            if self.case_insensitive:
+                prefix_name = prefix_class.__name__.lower()
+            else:
+                prefix_name = prefix_class.__name__
+            new_schema['name'] = prefix_name + "_and_" + schema['name']
         return new_schema
 
 
@@ -196,7 +201,7 @@ class ToolBox:
         self.tool_sets = tool_sets
 
         if generator is None:
-            generator = SchemaGenerator(strict=self.strict, name_mappings=self.name_mappings)
+            generator = SchemaGenerator(strict=self.strict, case_insensitive=self.case_insensitive, name_mappings=self.name_mappings)
         self.generator = generator
 
 
@@ -317,6 +322,8 @@ class ToolBox:
             # todo make better API for returning the prefix
             self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
             prefix_name = prefix_class.__name__
+            if self.case_insensitive:
+                prefix_name = prefix_name.lower()
             if not tool_name.startswith(prefix_name):
                 raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
             else:

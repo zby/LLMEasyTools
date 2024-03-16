@@ -232,7 +232,7 @@ def test_process_function_with_prefixing():
 
     toolbox = ToolBox()
     toolbox.register_toolset(tool)
-    prefixed_name = 'Reflection_and_tool_method'
+    prefixed_name = 'reflection_and_tool_method'
     no_reflection_function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps(ToolParam(value=2).model_dump()))
     with pytest.raises(Exception) as exception_info:
         toolbox.process_function(no_reflection_function_call, prefix_class=Reflection)
