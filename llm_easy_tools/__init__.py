@@ -316,12 +316,13 @@ class ToolBox:
                 results.append(result)
         return results
 
-    def process_function(self, function_call, prefix_class=None):
+    def process_function(self, function_call, prefix_class=None, ignore_prefix=False):
         tool_args = json.loads(function_call.arguments)
         tool_name = function_call.name
         if prefix_class is not None:
-            # todo make better API for returning the prefix
-            self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
+            if not ignore_prefix:
+                # todo make better API for returning the prefix
+                self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
             prefix_name = prefix_class.__name__
             if self.case_insensitive:
                 prefix_name = prefix_name.lower()
