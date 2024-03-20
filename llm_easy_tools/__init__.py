@@ -98,7 +98,7 @@ class SchemaGenerator:
 
         return schema
 
-    def prefix_schema(self, prefix_class, schema, prefix_schema_name=True):
+    def insert_prefix(self, prefix_class, schema, prefix_schema_name=True):
         prefix_schema, _ = self.get_model_schema(prefix_class)
         if 'parameters' in schema:
             prefix_schema['required'].extend(schema['parameters']['required'])
@@ -213,7 +213,7 @@ class ToolBox:
         # todo - decide if we want use internal or external name here
         function_schema = self.tool_registry[name]["function_schema"]
         if prefix_class:
-            function_schema = self.generator.prefix_schema(prefix_class, function_schema)
+            function_schema = self.generator.insert_prefix(prefix_class, function_schema)
         return self.generator.tool_schema(function_schema)
 
     def function_schemas(self, prefix_class=None):
@@ -221,7 +221,7 @@ class ToolBox:
         for func_info in self.tool_registry.values():
             schema = func_info["function_schema"]
             if prefix_class:
-                schema = self.generator.prefix_schema(prefix_class, schema)
+                schema = self.generator.insert_prefix(prefix_class, schema)
             function_schemas.append(schema)
         return function_schemas
 
@@ -326,9 +326,9 @@ class ToolBox:
             prefix_name = prefix_class.__name__
             if self.case_insensitive:
                 prefix_name = prefix_name.lower()
-            if not tool_name.startswith(prefix_name):
+            if not tool_name.startswith(prefix_name) and not ignore_prefix:
                 raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
-            else:
+            elif tool_name.startswith(prefix_name):
                 tool_name = tool_name[len(prefix_name + '_and_'):]
         return self._process_unpacked(tool_name, tool_args)
 

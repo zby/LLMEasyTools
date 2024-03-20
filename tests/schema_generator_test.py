@@ -164,14 +164,14 @@ def test_merge_schemas():
 
     generator = SchemaGenerator()
     function_schema = generator.function_schema(simple_function)
-    new_schema = generator.prefix_schema(Reflection, function_schema)
+    new_schema = generator.insert_prefix(Reflection, function_schema)
     assert new_schema['name'] == "reflection_and_simple_function"
     assert len(new_schema['parameters']['properties']) == 4
     assert len(new_schema['parameters']['required']) == 3
     assert len(function_schema['parameters']['properties']) == 2  # the old schema is not changed
     assert len(function_schema['parameters']['required']) == 1  # the old schema is not changed
-    first_param_name = list(new_schema['parameters']['properties'].keys())[0]
-    assert first_param_name == 'relevancy' # First parameters from the prefix class/
+    param_names = list(new_schema['parameters']['properties'].keys())
+    assert param_names == ['relevancy', 'next_actions_plan', 'count', 'size']
 
 
 def test_empty_model_merge():
@@ -192,7 +192,7 @@ def test_empty_model_merge():
     assert function_schema['name'] == 'function_no_doc'
     assert 'parameters' not in function_schema
 
-    new_schema = generator.prefix_schema(Reflection, function_schema)
+    new_schema = generator.insert_prefix(Reflection, function_schema)
     assert len(new_schema['parameters']['properties']) == 2
     assert new_schema['name'] == 'reflection_and_function_no_doc'
 
