@@ -304,19 +304,19 @@ class ToolBox:
                 return fname
         return schema_name
 
-    def process_response(self, response, choice_num=0):
+    def process_response(self, response, choice_num=0, prefix_class=None, ignore_prefix=False):
         results = []
         if response.choices[choice_num].message.function_call:
             function_call = response.choices[choice_num].message.function_call
-            result = self.process_function(function_call)
+            result = self.process_function(function_call, prefix_class, ignore_prefix)
             results.append(result)
         if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
-                result = self.process_function(tool_call.function)
+                result = self.process_function(tool_call.function, prefix_class, ignore_prefix)
                 results.append(result)
         return results
 
-    def process_function(self, function_call, prefix_class=None, ignore_prefix=False):
+    def process_function(self, function_call, prefix_class, ignore_prefix):
         tool_args = json.loads(function_call.arguments)
         tool_name = function_call.name
         if prefix_class is not None:
