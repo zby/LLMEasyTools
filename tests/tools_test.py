@@ -119,12 +119,13 @@ def test_process_with_identity():
     result = toolbox.process_function(function_call)
     assert result == original_user
 
-def process_response():
+def test_process_response():
+    # too much mocking in this test
     toolbox = ToolBox()
-    toolbox.register_function(UserDetail)
+    toolbox.register_model(UserDetail)
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
-    response = Mock(choices=[Mock(message=Mock(tool_calls=[Mock(function=function_call)]))])
+    response = Mock(choices=[Mock(message=Mock(function_call=False, tool_calls=[Mock(function=function_call)]))])
     results = toolbox.process_response(response)
     assert len(results) == 1
     assert results[0] == original_user
@@ -247,5 +248,20 @@ def test_process_function_with_prefixing():
     assert result == 'executed tool_method with param: value=2'
     assert isinstance(toolbox.prefix, Reflection)
 
+def test_json_fix():
+    toolbox = ToolBox()
+    toolbox.register_model(UserDetail)
+    original_user = UserDetail(name="John", age=21)
+    json_data = json.dumps(original_user.model_dump())
+    json_data = json_data[:-1]
+    json_data = json_data + ',}'
+    function_call = FunctionCallMock(name="UserDetail", arguments=json_data)
+    result = toolbox.process_function(function_call)
+    assert result == original_user
+
+    with pytest.raises(Exception) as exception_info:
+        toolbox.fix_json_args = False
+        toolbox.process_function(function_call)
+    assert isinstance(exception_info.value, json.decoder.JSONDecodeError)
 
 pytest.main()

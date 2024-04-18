@@ -187,6 +187,7 @@ class ToolBox:
     def __init__(self, strict=True, name_mappings=None, case_insensitive=True,
                  tool_registry=None, generator=None,
                  tool_sets=None,
+                 fix_json_args=True,
                  ):
         self.strict = strict
         self.case_insensitive = case_insensitive
@@ -203,6 +204,8 @@ class ToolBox:
         if generator is None:
             generator = SchemaGenerator(strict=self.strict, case_insensitive=self.case_insensitive, name_mappings=self.name_mappings)
         self.generator = generator
+
+        self.fix_json_args = fix_json_args
 
 
     def tool_schemas(self, prefix_class=None):
@@ -316,8 +319,17 @@ class ToolBox:
                 results.append(result)
         return results
 
-    def process_function(self, function_call, prefix_class, ignore_prefix):
-        tool_args = json.loads(function_call.arguments)
+    def process_function(self, function_call, prefix_class=None, ignore_prefix=False):
+        args = function_call.arguments
+        if self.fix_json_args:
+            try:
+                tool_args = json.loads(args)
+            except json.decoder.JSONDecodeError as e:
+                args = args.replace(', }', '}').replace(',}', '}')
+                tool_args = json.loads(args)
+        else:
+            tool_args = json.loads(args)
+
         tool_name = function_call.name
         if prefix_class is not None:
             if not ignore_prefix:
