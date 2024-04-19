@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Callable, Dict, Any, get_origin, Type
+from typing import Annotated, Callable, Dict, Any, get_origin, Type, Union
 
 import copy
 import pydantic as pd
@@ -19,26 +19,11 @@ def llm_function(schema_name=None):
 
 
 
-def tool_schema(function_schema: dict) -> dict:
+def tool_def(function_schema: dict) -> dict:
     return {
         "type": "function",
         "function": function_schema,
     }
-
-def generate_tools(*functions: Callable) -> list:
-    """
-    Generates a tools description array for multiple functions.
-
-    Args:
-    *functions: A variable number of functions to introspect.
-
-    Returns:
-    A list representing the tools structure for a client.chat.completions.create call.
-    """
-    tools_array = []
-    for function in functions:
-        tools_array.append(tool_schema(get_function_schema(function)))
-    return tools_array
 
 def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]:
     fields = {}
@@ -66,12 +51,18 @@ def _recursive_purge_titles(d: Dict[str, Any]) -> None:
             else:
                 _recursive_purge_titles(d[key])
 
-def get_function_schema(function: Callable) -> dict:
-    schema_name = function.__name__
-    if hasattr(function, 'LLMEasyTools_schema_name'):
-        schema_name = function.LLMEasyTools_schema_name
+def get_name(func_or_model: Union[Callable, Type[BaseModel]], case_insensitive: bool) -> str:
+    schema_name = func_or_model.__name__
+    if hasattr(func_or_model, 'LLMEasyTools_schema_name'):
+        schema_name = func_or_model.LLMEasyTools_schema_name
+    if case_insensitive:
+        schema_name = schema_name.lower()
+    return schema_name
+
+
+def get_function_schema(function: Callable, case_insensitive: bool=False) -> dict:
     function_schema = {
-        'name': schema_name,
+        'name': get_name(function, case_insensitive),
         'description': (function.__doc__ or '').strip(),
     }
     model = parameters_basemodel_from_function(function)
@@ -79,6 +70,16 @@ def get_function_schema(function: Callable) -> dict:
         model_json_schema = model.model_json_schema()
         _recursive_purge_titles(model_json_schema)
         function_schema['parameters'] = model_json_schema
+    return function_schema
+
+def get_model_schema(model_class: Type[BaseModel], case_insensitive: bool=False) -> dict:
+    function_schema = {
+        'name': get_name(model_class, case_insensitive),
+        'description': (model_class.__doc__ or '').strip(),
+    }
+    model_json_schema = model_class.model_json_schema()
+    _recursive_purge_titles(model_json_schema)
+    function_schema['parameters'] = model_json_schema
     return function_schema
 
 def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = True):
@@ -123,13 +124,19 @@ def function_decorated():
     pass
 
 class ExampleClass:
-     def simple_method(count: int, size: float):
+     def simple_method(self, count: int, size: float):
          """simple method does something"""
          pass
 
 example_object = ExampleClass()
 
+@llm_function(schema_name="altered_name")
+class UserDetail(BaseModel):
+    name: str
+    city: str
+
+
 if __name__ == "__main__":
-#    pprint(generate_tools(function_with_doc, function_decorated))
-    pprint(generate_tools(example_object.simple_method))
+    #pprint(get_function_schema(example_object.simple_method))
+    pprint(get_model_schema(UserDetail))
 
