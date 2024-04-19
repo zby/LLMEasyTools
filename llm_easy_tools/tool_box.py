@@ -1,9 +1,13 @@
+import json
+import openai.types.chat
+
 from typing import Callable
 from pprint import pprint
 from typing import Type
 from pydantic import BaseModel
 
 from llm_easy_tools.schema_generator import get_function_schema, get_model_schema, get_name, insert_prefix, tool_def, llm_function
+from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion
 
 class ToolBox:
     def __init__(self,
@@ -46,20 +50,105 @@ class ToolBox:
             schemas.append(tool_def(the_schema))
         return schemas
 
+    def process_response(self, response, choice_num=0, prefix_class=None, ignore_prefix=False):
+        results = []
+        if response.choices[choice_num].message.function_call:
+            function_call = response.choices[choice_num].message.function_call
+            content = self.process_function(function_call, prefix_class, ignore_prefix)
+            result = { "role": "function", "name": function_call.name, "content": content }
+            results.append(result)
+        if response.choices[choice_num].message.tool_calls:
+            for tool_call in response.choices[choice_num].message.tool_calls:
+                content = self.process_function(tool_call.function, prefix_class, ignore_prefix)
+                result = {"role": "function", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": content}
+                results.append(result)
+        return results
+
+    def process_function(self, function_call, prefix_class=None, ignore_prefix=False):
+        args = function_call.arguments
+        if self.fix_json_args:
+            try:
+                tool_args = json.loads(args)
+            except json.decoder.JSONDecodeError as e:
+                args = args.replace(', }', '}').replace(',}', '}')
+                tool_args = json.loads(args)
+        else:
+            tool_args = json.loads(args)
+
+        tool_name = function_call.name
+        if prefix_class is not None:
+            if not ignore_prefix:
+                # todo make better API for returning the prefix
+                self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
+            prefix_name = prefix_class.__name__
+            if self.case_insensitive:
+                prefix_name = prefix_name.lower()
+            if not tool_name.startswith(prefix_name) and not ignore_prefix:
+                raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
+            elif tool_name.startswith(prefix_name):
+                tool_name = tool_name[len(prefix_name + '_and_'):]
+        return self._process_unpacked(tool_name, tool_args)
+
+
+    def _process_unpacked(self, tool_name, tool_args=None):
+        tool_args = {} if tool_args is None else tool_args
+        tool_info = self.tool_registry[tool_name]
+        if 'model_class' in tool_info:
+            model_class = tool_info['model_class']
+            model = model_class(**tool_args)
+            return model
+        else:
+            function = tool_info["function"]
+            observations = function(**tool_args)
+            return observations
+
+    def _extract_prefix_unpacked(self, tool_args, prefix_class):
+        # modifies tool_args
+        prefix_args = {}
+        for key in list(tool_args.keys()):  # copy keys to list because we modify the dict while iterating over it
+            if key in prefix_class.__annotations__:
+                prefix_args[key] = tool_args.pop(key)
+        prefix = prefix_class(**prefix_args)
+        return(prefix)
+
+
 #######################################
 #
 # Examples
 
 @llm_function(schema_name="altered_name")
 def function_decorated():
-    pass
+    return 'Result of function_decorated'
 
 class ExampleClass:
      def simple_method(self, count: int, size: float):
          """simple method does something"""
-         pass
+         return 'Result of simple_method'
 
 example_object = ExampleClass()
+
+chat_completion_message = ChatCompletionMessage(
+    role="assistant",
+    tool_calls=[
+        {
+            "id": 'A',
+            "type": 'function',
+            "function": {
+                "arguments": json.dumps({"count": 1, "size": 2.2}),
+                "name": 'simple_method'
+            }
+        }
+    ]
+)
+
+chat_completion = ChatCompletion(
+    id='A',
+    created=0,
+    model='A',
+    choices=[ { 'finish_reason': 'stop', 'index': 0, 'message': chat_completion_message } ],
+    object='chat.completion'
+)
+
 
 if __name__ == "__main__":
     toolbox = ToolBox()
@@ -67,4 +156,8 @@ if __name__ == "__main__":
     toolbox.register_function(example_object.simple_method)
 #    pprint(generate_tools(function_with_doc, function_decorated))
     pprint(toolbox.tool_schemas())
+    print(toolbox._process_unpacked('altered_name'))
+    print(toolbox.process_response(chat_completion))
+
+
 
