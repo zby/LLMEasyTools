@@ -3,7 +3,7 @@ import pytest
 from typing import List, Optional, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator
 
-from llm_easy_tools.schema_generator import get_function_schema, llm_function, insert_prefix
+from llm_easy_tools import get_function_schema, llm_function, insert_prefix
 
 from pprint import pprint
 

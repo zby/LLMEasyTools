@@ -36,7 +36,7 @@ pytest -v tests
 
 ## Usage
 
-### Basic Example: Getting structured data from LLM
+### Basic Example: Dispatching to a function
 
 ```python
 from llm_easy_tools import ToolBox
@@ -46,17 +46,40 @@ from pprint import pprint
 
 client = OpenAI()
 
+# Create a ToolBox instance
+toolbox = ToolBox()
 
+def contact_user(name: str, city: str):
+    return f"User {name} from {city} was contacted"
+
+toolbox.register_function(contact_user)
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo-1106",
+    messages=[{"role": "user", "content": "Contact John. John lives in Warsaw"}],
+    tools=toolbox.tool_schemas(),
+    tool_choice={"type": "function", "function": {"name": "contact_user"}},
+)
+# There might be more than one tool calls and more than one result
+results = toolbox.process_response(response)
+
+pprint(results[0]['content'])
+
+```
+Output:
+```
+User John from Warsaw was contacted
+```
+
+### Example: Getting structured data from LLM
+
+```python
 # Define a Pydantic model for your tool's input
 class UserDetail(BaseModel):
     name: str
     city: str
 
-
-# Create a ToolBox instance
-toolbox = ToolBox()
-
-# Register your tool - if a class is passed an identity function over it is registered
+# Register your model
 toolbox.register_model(UserDetail)
 
 response = client.chat.completions.create(
@@ -70,38 +93,13 @@ response = client.chat.completions.create(
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
 
-pprint(results)
+pprint(results[0]['content'])
 ```
 Output:
 ```
-[UserDetail(name='John', city='Warsaw')]
+UserDetail(name='John', city='Warsaw')
 ```
 
-### Example: Dispatching to a function
-
-```python
-def contact_user(user: UserDetail):
-    return f"User {user.name} from {user.city} was contacted"
-
-
-toolbox.register_model(contact_user)
-
-response = client.chat.completions.create(
-    model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Contact John. John lives in Warsaw"}],
-    tools=toolbox.tool_schemas(),
-    tool_choice={"type": "function", "function": {"name": "contact_user"}},
-)
-# There might be more than one tool calls and more than one result
-results = toolbox.process_response(response)
-
-pprint(results)
-
-```
-Output:
-```
-['User John from Warsaw was contacted']
-```
 
 Discover more possibilities and examples in the examples directory and test suite.
 

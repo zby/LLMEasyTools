@@ -1,4 +1,5 @@
 import json
+import inspect
 import openai.types.chat
 
 from typing import Callable
@@ -15,11 +16,13 @@ class ToolBox:
                  fix_json_args=True,
                  case_insensitive=False,
                  insert_prefix_name=True,
+                 tool_sets=None
                  ):
         self.tool_registry = {} if tool_registry is None else tool_registry
         self.fix_json_args = fix_json_args
         self.case_insensitive = case_insensitive
         self.insert_prefix_name = insert_prefix_name
+        self.tool_sets = {} if tool_sets is None else tool_sets
 
 
     def register_function(self, function: Callable):
@@ -38,17 +41,38 @@ class ToolBox:
 
         self.tool_registry[model_name] = { 'model_class': model_class}
 
+    def register_toolset(self, obj, key=None):
+        if key is None:
+            key = type(obj).__name__
+
+        if key in self.tool_sets:
+            raise Exception(f"A toolset with key {key} already exists.")
+
+        self.tool_sets[key] = obj
+        methods = inspect.getmembers(obj, predicate=inspect.ismethod)
+        for name, method in methods:
+            if hasattr(method, 'LLMEasyTools_external_function'):
+                self.register_function(method)
+        for attr_name in dir(obj.__class__):
+            attr_value = getattr(obj.__class__, attr_name)
+            if isinstance(attr_value, type) and hasattr(attr_value, 'LLMEasyTools_external_function'):
+                self.register_model(attr_value)
+
     def tool_schemas(self, prefix_class=None):
         schemas = []
-        for tool in self.tool_registry.values():
-            if 'function' in tool:
-                the_schema = get_function_schema(tool['function'])
-            elif 'model_class' in tool:
-                the_schema = get_model_schema(tool['model_class'])
-            if prefix_class is not None:
-                function_schema = insert_prefix(prefix_class, the_schema, self.insert_prefix_name, self.case_insensitive)
-            schemas.append(tool_def(the_schema))
+        for tool_name in self.tool_registry.keys():
+            schemas.append(tool_def(self.get_tool_schema(tool_name, prefix_class)))
         return schemas
+
+    def get_tool_schema(self, tool_name, prefix_class=None):
+        tool = self.tool_registry[tool_name]
+        if 'function' in tool:
+            the_schema = get_function_schema(tool['function'])
+        elif 'model_class' in tool:
+            the_schema = get_model_schema(tool['model_class'])
+        if prefix_class is not None:
+            the_schema = insert_prefix(prefix_class, the_schema, self.insert_prefix_name, self.case_insensitive)
+        return the_schema
 
     def process_response(self, response, choice_num=0, prefix_class=None, ignore_prefix=False):
         results = []
@@ -127,28 +151,6 @@ class ExampleClass:
 
 example_object = ExampleClass()
 
-chat_completion_message = ChatCompletionMessage(
-    role="assistant",
-    tool_calls=[
-        {
-            "id": 'A',
-            "type": 'function',
-            "function": {
-                "arguments": json.dumps({"count": 1, "size": 2.2}),
-                "name": 'simple_method'
-            }
-        }
-    ]
-)
-
-chat_completion = ChatCompletion(
-    id='A',
-    created=0,
-    model='A',
-    choices=[ { 'finish_reason': 'stop', 'index': 0, 'message': chat_completion_message } ],
-    object='chat.completion'
-)
-
 
 if __name__ == "__main__":
     toolbox = ToolBox()
@@ -157,6 +159,29 @@ if __name__ == "__main__":
 #    pprint(generate_tools(function_with_doc, function_decorated))
     pprint(toolbox.tool_schemas())
     print(toolbox._process_unpacked('altered_name'))
+
+    chat_completion_message = ChatCompletionMessage(
+        role="assistant",
+        tool_calls=[
+            {
+                "id": 'A',
+                "type": 'function',
+                "function": {
+                    "arguments": json.dumps({"count": 1, "size": 2.2}),
+                    "name": 'simple_method'
+                }
+            }
+        ]
+    )
+
+    chat_completion = ChatCompletion(
+        id='A',
+        created=0,
+        model='A',
+        choices=[{'finish_reason': 'stop', 'index': 0, 'message': chat_completion_message}],
+        object='chat.completion'
+    )
+
     print(toolbox.process_response(chat_completion))
 
 

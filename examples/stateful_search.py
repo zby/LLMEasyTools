@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from llm_easy_tools import ToolBox, external_function
+from llm_easy_tools import ToolBox, llm_function
 import re
 from openai import OpenAI
 
@@ -20,12 +20,12 @@ class DocumentManager:
         ]
         self.current_document = None
 
-    @external_function()
-    def search_document(self, query: SearchQuery):
+    @llm_function()
+    def search_document(self, term: str):
         closest_match = None
         min_distance = float('inf')
         for doc in self.documents:
-            distance = self._calculate_similarity(query.term, doc['title'])
+            distance = self._calculate_similarity(term, doc['title'])
             if distance < min_distance:
                 min_distance = distance
                 closest_match = doc
@@ -37,16 +37,16 @@ class DocumentManager:
         else:
             return "No matching document found."
 
-    @external_function()
-    def lookup_word(self, query: WordQuery):
+    @llm_function()
+    def lookup_word(self, word: str):
         if not self.current_document:
             return "No document is currently selected."
 
         sentences = self.current_document['content'].split('.')
         for sentence in sentences:
-            if query.word in sentence:
+            if word in sentence:
                 return sentence.strip()
-        return f"The word '{query.word}' was not found in the current document."
+        return f"The word '{word}' was not found in the current document."
 
     def _calculate_similarity(self, term, title):
         # Simple similarity calculation (can be replaced with more sophisticated methods)
@@ -73,7 +73,7 @@ response_search = client.chat.completions.create(
 # Process the response to search for the document
 
 results_search = toolbox.process_response(response_search)
-print(results_search)
+print(results_search[0]['content'])
 
 # Example LLM call to look up a word in the current document
 response_lookup = client.chat.completions.create(
@@ -84,10 +84,11 @@ response_lookup = client.chat.completions.create(
 )
 # Process the response to look up the word
 results_lookup = toolbox.process_response(response_lookup)
-print(results_lookup)
+print(results_lookup[0]['content'])
 
 
 ## OUTPUT
 #
-# ['Found document, title: Advancements in AI.\n Exploring the latest advancements in artificial intelligence...']
-# ['AI is evolving rapidly']
+# Found document, title: Advancements in AI.
+# Exploring the latest advancements in artificial intelligence...
+# AI is evolving rapidly

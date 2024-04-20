@@ -12,9 +12,6 @@ class UserDetail(BaseModel):
     city: str
 
 
-def contact_user(user: UserDetail):
-    return f"User {user.name} from {user.city} was contactd"
-
 # Create a ToolBox instance
 toolbox = ToolBox()
 
@@ -30,7 +27,11 @@ response = client.chat.completions.create(
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
 
-pprint(results)
+#pprint(results)
+pprint(results[0]['content'])
+
+def contact_user(name: str, city: str) -> str:
+    return f"User {name} from {city} was contactd"
 
 toolbox.register_function(contact_user)
 
@@ -43,4 +44,4 @@ response = client.chat.completions.create(
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
 
-pprint(results)
+pprint(results[0]['content'])
