@@ -17,6 +17,19 @@ class ToolResult(BaseModel):
     model: Optional[BaseModel] = None
     error: Optional[str] = None
 
+    def to_message(self):
+        if self.output is not None:
+            content = self.output
+        elif self.model is not None:
+            content = f"{self.name} created"
+        elif self.error is not None:
+            content = f"{self.error}"
+        return ChatCompletionMessage(
+            role="function",
+            name=self.name,
+            content=content
+        )
+
 class ToolBox:
     def __init__(self,
                  tool_registry=None,
