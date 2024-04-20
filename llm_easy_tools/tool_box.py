@@ -81,7 +81,7 @@ class ToolBox:
     def tool_schemas(self, prefix_class=None):
         schemas = []
         for tool_name in self.tool_registry.keys():
-            schemas.append(tool_def(self.get_tool_schema(tool_name, prefix_class)))
+            schemas.append(self.get_tool_schema(tool_name, prefix_class))
         return schemas
 
     def get_tool_schema(self, tool_name, prefix_class=None):
@@ -92,7 +92,7 @@ class ToolBox:
             the_schema = get_model_schema(tool['model_class'])
         if prefix_class is not None:
             the_schema = insert_prefix(prefix_class, the_schema, self.insert_prefix_name, self.case_insensitive)
-        return the_schema
+        return tool_def(the_schema)
 
     def process_response(self, response, choice_num=0, prefix_class=None, ignore_prefix=False):
         results = []

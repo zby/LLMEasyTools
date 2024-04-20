@@ -181,7 +181,7 @@ def test_register_model():
     assert toolbox.tool_registry['WikiSearch']["model_class"] is WikiSearch
     assert len(toolbox.tool_schemas()) == 2
 
-    assert toolbox.get_tool_schema('WikiSearch')['name'] == 'WikiSearch'
+    assert toolbox.get_tool_schema('WikiSearch')['function']['name'] == 'WikiSearch'
 
 def test_prefixing():
     class Tool(BaseModel):
