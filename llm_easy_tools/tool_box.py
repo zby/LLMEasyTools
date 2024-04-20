@@ -1,14 +1,21 @@
 import json
 import inspect
-import openai.types.chat
+import traceback
 
 from typing import Callable
 from pprint import pprint
-from typing import Type
+from typing import Type, Optional
 from pydantic import BaseModel
 
 from llm_easy_tools.schema_generator import get_function_schema, get_model_schema, get_name, insert_prefix, tool_def, llm_function
 from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion
+
+class ToolResult(BaseModel):
+    tool_call_id: str
+    name: str
+    output: Optional[str] = None
+    model: Optional[BaseModel] = None
+    error: Optional[str] = None
 
 class ToolBox:
     def __init__(self,
@@ -77,29 +84,29 @@ class ToolBox:
     def process_response(self, response, choice_num=0, prefix_class=None, ignore_prefix=False):
         results = []
         if response.choices[choice_num].message.function_call:
+            # this is obsolete in openai - but maybe it is used by other llms?
             function_call = response.choices[choice_num].message.function_call
-            content = self.process_function(function_call, prefix_class, ignore_prefix)
-            result = { "role": "function", "name": function_call.name, "content": content }
+            result = self.process_function(function_call, None, prefix_class, ignore_prefix)
             results.append(result)
         if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
-                content = self.process_function(tool_call.function, prefix_class, ignore_prefix)
-                result = {"role": "function", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": content}
+                result = self.process_function(tool_call.function, tool_call.id, prefix_class, ignore_prefix)
                 results.append(result)
         return results
 
-    def process_function(self, function_call, prefix_class=None, ignore_prefix=False):
+    def process_function(self, function_call, tool_id, prefix_class=None, ignore_prefix=False):
+        tool_name = function_call.name
         args = function_call.arguments
-        if self.fix_json_args:
-            try:
-                tool_args = json.loads(args)
-            except json.decoder.JSONDecodeError as e:
+        try:
+            tool_args = json.loads(args)
+        except json.decoder.JSONDecodeError as e:
+            if self.fix_json_args:
                 args = args.replace(', }', '}').replace(',}', '}')
                 tool_args = json.loads(args)
-        else:
-            tool_args = json.loads(args)
+            else:
+                error = traceback.format_exc()
+                return ToolResult(tool_call_id=tool_id, name=tool_name, error=error)
 
-        tool_name = function_call.name
         if prefix_class is not None:
             if not ignore_prefix:
                 # todo make better API for returning the prefix
@@ -111,20 +118,30 @@ class ToolBox:
                 raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
             elif tool_name.startswith(prefix_name):
                 tool_name = tool_name[len(prefix_name + '_and_'):]
-        return self._process_unpacked(tool_name, tool_args)
+        return self._process_unpacked(tool_name, tool_id, tool_args)
 
 
-    def _process_unpacked(self, tool_name, tool_args=None):
+    def _process_unpacked(self, tool_name, tool_id, tool_args=None):
         tool_args = {} if tool_args is None else tool_args
         tool_info = self.tool_registry[tool_name]
+        error = None
         if 'model_class' in tool_info:
             model_class = tool_info['model_class']
-            model = model_class(**tool_args)
-            return model
+            model = None
+            try:
+                model = model_class(**tool_args)
+            except Exception as e:
+                error = traceback.format_exc()
+            result = ToolResult(tool_call_id=tool_id, name=tool_name, model=model, error=error)
         else:
             function = tool_info["function"]
-            observations = function(**tool_args)
-            return observations
+            try:
+                output = function(**tool_args)
+            except Exception as e:
+                error = traceback.format_exc()
+            result = ToolResult(tool_call_id=tool_id, name=tool_name, output=output, error=error)
+
+        return result
 
     def _extract_prefix_unpacked(self, tool_args, prefix_class):
         # modifies tool_args
@@ -158,7 +175,7 @@ if __name__ == "__main__":
     toolbox.register_function(example_object.simple_method)
 #    pprint(generate_tools(function_with_doc, function_decorated))
     pprint(toolbox.tool_schemas())
-    print(toolbox._process_unpacked('altered_name'))
+    pprint(toolbox._process_unpacked('altered_name', 'aaa'))
 
     chat_completion_message = ChatCompletionMessage(
         role="assistant",

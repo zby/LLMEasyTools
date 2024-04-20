@@ -2,10 +2,10 @@ import pytest
 import json
 
 from unittest.mock import Mock
-from llm_easy_tools import ToolBox, llm_function
+from llm_easy_tools import ToolBox, ToolResult, llm_function
 from pydantic import BaseModel, Field, ValidationError
 from typing import Any
-
+from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion
 
 class TestTool:
 
@@ -73,13 +73,14 @@ def test_process():
     toolbox = ToolBox()
     toolbox.register_toolset(tool)
     function_call = FunctionCallMock(name="tool_method", arguments=json.dumps({"arg": 2}))
-    result = toolbox.process_function(function_call)
-    assert result == 'executed tool_method with param: 2'
+    result = toolbox.process_function(function_call, '')
+    assert isinstance(result, ToolResult)
+    assert result.output == 'executed tool_method with param: 2'
 
     # Test with unknown function call name
     with pytest.raises(KeyError):
         function_call = FunctionCallMock(name="unknown", arguments=json.dumps({'arg': 3}))
-        toolbox.process_function(function_call)
+        toolbox.process_function(function_call, '')
 
 
 class UserDetail(BaseModel):
@@ -92,19 +93,42 @@ def test_process_model():
     assert "UserDetail" in toolbox.tool_registry
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
-    result = toolbox.process_function(function_call)
-    assert result == original_user
+    result = toolbox.process_function(function_call, '')
+    assert result.model == original_user
+
+def mk_chat_with_tool_call(name, args):
+    message = ChatCompletionMessage(
+        role="assistant",
+        tool_calls=[
+            {
+                "id": 'A',
+                "type": 'function',
+                "function": {
+                    "arguments": json.dumps(args),
+                    "name": name
+                }
+            }
+        ]
+    )
+    chat_completion = ChatCompletion(
+        id='A',
+        created=0,
+        model='A',
+        choices=[{'finish_reason': 'stop', 'index': 0, 'message': message}],
+        object='chat.completion'
+    )
+    return chat_completion
+
 
 def test_process_response():
     # too much mocking in this test
     toolbox = ToolBox()
     toolbox.register_model(UserDetail)
     original_user = UserDetail(name="John", age=21)
-    function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
-    response = Mock(choices=[Mock(message=Mock(function_call=False, tool_calls=[Mock(function=function_call)]))])
+    response = mk_chat_with_tool_call("UserDetail", original_user.model_dump())
     results = toolbox.process_response(response)
     assert len(results) == 1
-    assert results[0]['content'] == original_user
+    assert results[0].model == original_user
 
 
 # Define the test cases
@@ -192,13 +216,13 @@ def test_process_function_with_prefixing():
     prefixed_name = 'Reflection_and_tool_method'
     no_reflection_function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps({'arg': 2}))
     with pytest.raises(Exception) as exception_info:
-        toolbox.process_function(no_reflection_function_call, prefix_class=Reflection)
+        toolbox.process_function(no_reflection_function_call, '', prefix_class=Reflection)
     assert isinstance(exception_info.value, ValidationError)
     args = {'arg': 2}
     args['relevancy'] = 'very good'
     function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps(args))
-    result = toolbox.process_function(function_call, prefix_class=Reflection)
-    assert result == 'executed tool_method with param: 2'
+    result = toolbox.process_function(function_call, '', prefix_class=Reflection)
+    assert result.output == 'executed tool_method with param: 2'
     assert isinstance(toolbox.prefix, Reflection)
 
 def test_json_fix():
@@ -209,12 +233,11 @@ def test_json_fix():
     json_data = json_data[:-1]
     json_data = json_data + ',}'
     function_call = FunctionCallMock(name="UserDetail", arguments=json_data)
-    result = toolbox.process_function(function_call)
-    assert result == original_user
+    result = toolbox.process_function(function_call, '')
+    assert result.model == original_user
 
-    with pytest.raises(Exception) as exception_info:
-        toolbox.fix_json_args = False
-        toolbox.process_function(function_call)
-    assert isinstance(exception_info.value, json.decoder.JSONDecodeError)
+    toolbox.fix_json_args = False
+    result = toolbox.process_function(function_call, '')
+    assert 'json.decoder.JSONDecodeError' in result.error
 
 pytest.main()
