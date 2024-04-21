@@ -32,5 +32,11 @@ packages = ["llm_easy_tools"]
 [project.optional-dependencies]
 test = ["pytest~=7.4.4"]
 
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+
+
 [tool.setuptools.dynamic]
 # Add dynamic setuptools configurations if needed
