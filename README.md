@@ -13,7 +13,7 @@ By integrating Pydantic, LLMEasyTools ensures robust data validation and schema 
 
 ## Features
 
-- **Schema Generation**: Effortlessly create JSON schemas for tools using Pydantic models.
+- **Schema Generation**: Effortlessly create JSON schemas for tools from type annotations
 - **Structured Data from LLM**
 - **Function Name Mapping**: Flexibly map JSON schema names to Python code.
 - **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
