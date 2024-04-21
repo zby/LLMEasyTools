@@ -38,7 +38,7 @@ tool = TestTool()
 
 def test_toolbox_init():
     toolbox = ToolBox()
-    assert toolbox.tool_registry == {}
+    assert toolbox._tool_registry == {}
     assert toolbox.tool_schemas() == []
     assert toolbox.case_insensitive == False
     assert toolbox.fix_json_args == True
@@ -49,13 +49,13 @@ def test_register_toolset():
     # Test the normal case
     tool_manager.register_toolset(tool)
 
-    assert 'TestTool' in tool_manager.tool_sets
-    assert 'tool_method' in tool_manager.tool_registry
-    assert 'additional_tool_method' in tool_manager.tool_registry
-    assert 'User' in tool_manager.tool_registry
-    assert 'SomeClass' not in tool_manager.tool_registry
-    assert 'short_address' in tool_manager.tool_registry
-    assert '_private_tool_method' not in tool_manager.tool_registry
+    assert 'TestTool' in tool_manager._tool_sets
+    assert 'tool_method' in tool_manager._tool_registry
+    assert 'additional_tool_method' in tool_manager._tool_registry
+    assert 'User' in tool_manager._tool_registry
+    assert 'SomeClass' not in tool_manager._tool_registry
+    assert 'short_address' in tool_manager._tool_registry
+    assert '_private_tool_method' not in tool_manager._tool_registry
 
     # Test for Exception when a Toolset with same key is being registered
     with pytest.raises(Exception) as exception_info:
@@ -90,7 +90,7 @@ class UserDetail(BaseModel):
 def test_process_model():
     toolbox = ToolBox()
     toolbox.register_model(UserDetail)
-    assert "UserDetail" in toolbox.tool_registry
+    assert "UserDetail" in toolbox._tool_registry
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
     result = toolbox.process_function(function_call, '')
@@ -144,23 +144,23 @@ def test_register_tool():
 
     # Test with correct parameters
     toolbox.register_function(example_tool)
-    assert 'example_tool' in toolbox.tool_registry
-    function_info = toolbox.tool_registry['example_tool']
+    assert 'example_tool' in toolbox._tool_registry
+    function_info = toolbox._tool_registry['example_tool']
     assert function_info["function"] == example_tool
     assert len(toolbox.tool_schemas()) == 1
 
     # Test with function with no parameters
     def no_parameters(): pass
     toolbox.register_function(no_parameters)
-    assert 'no_parameters' in toolbox.tool_registry
+    assert 'no_parameters' in toolbox._tool_registry
 
     @llm_function("good_name")
     def bad_name_tool(name: str):
         print('Running bad_name_tool')
 
     toolbox.register_function(bad_name_tool)
-    assert 'good_name' in toolbox.tool_registry
-    function_info = toolbox.tool_registry['good_name']
+    assert 'good_name' in toolbox._tool_registry
+    function_info = toolbox._tool_registry['good_name']
     assert function_info["function"] == bad_name_tool
 
 def test_register_model():
@@ -173,12 +173,12 @@ def test_register_model():
     toolbox = ToolBox()
     toolbox.register_model(Tool)
 
-    assert toolbox.tool_registry['Tool']["model_class"] is Tool
+    assert toolbox._tool_registry['Tool']["model_class"] is Tool
     assert len(toolbox.tool_schemas()) == 1
     assert toolbox.tool_schemas()[0]['function']['name'] == 'Tool'
 
     toolbox.register_model(WikiSearch)
-    assert toolbox.tool_registry['WikiSearch']["model_class"] is WikiSearch
+    assert toolbox._tool_registry['WikiSearch']["model_class"] is WikiSearch
     assert len(toolbox.tool_schemas()) == 2
 
     assert toolbox.get_tool_schema('WikiSearch')['function']['name'] == 'WikiSearch'

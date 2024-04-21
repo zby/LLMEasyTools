@@ -32,43 +32,41 @@ class ToolResult(BaseModel):
 
 class ToolBox:
     def __init__(self,
-                 tool_registry=None,
-                 fix_json_args=True,
-                 case_insensitive=False,
-                 insert_prefix_name=True,
-                 tool_sets=None
+                 fix_json_args: bool = True,
+                 case_insensitive: bool = False,
+                 insert_prefix_name: bool = True,
                  ):
-        self.tool_registry = {} if tool_registry is None else tool_registry
+        self._tool_registry = {}
+        self._tool_sets = {}
         self.fix_json_args = fix_json_args
         self.case_insensitive = case_insensitive
         self.insert_prefix_name = insert_prefix_name
-        self.tool_sets = {} if tool_sets is None else tool_sets
 
 
-    def register_function(self, function: Callable):
+    def register_function(self, function: Callable) -> None:
         function_name = get_name(function, self.case_insensitive)
 
-        if function_name in self.tool_registry:
+        if function_name in self._tool_registry:
             raise Exception(f"Trying to register {function_name} which is already registered")
 
-        self.tool_registry[function_name] = { 'function': function }
+        self._tool_registry[function_name] = { 'function': function }
 
-    def register_model(self, model_class: Type[BaseModel]):
+    def register_model(self, model_class: Type[BaseModel]) -> None:
         model_name = get_name(model_class, self.case_insensitive)
 
-        if model_name in self.tool_registry:
+        if model_name in self._tool_registry:
             raise Exception(f"Trying to register {model_name} which is already registered")
 
-        self.tool_registry[model_name] = { 'model_class': model_class}
+        self._tool_registry[model_name] = { 'model_class': model_class}
 
-    def register_toolset(self, obj, key=None):
+    def register_toolset(self, obj: object, key=None) -> None:
         if key is None:
             key = type(obj).__name__
 
-        if key in self.tool_sets:
+        if key in self._tool_sets:
             raise Exception(f"A toolset with key {key} already exists.")
 
-        self.tool_sets[key] = obj
+        self._tool_sets[key] = obj
         methods = inspect.getmembers(obj, predicate=inspect.ismethod)
         for name, method in methods:
             if hasattr(method, 'LLMEasyTools_external_function'):
@@ -78,14 +76,14 @@ class ToolBox:
             if isinstance(attr_value, type) and hasattr(attr_value, 'LLMEasyTools_external_function'):
                 self.register_model(attr_value)
 
-    def tool_schemas(self, prefix_class=None):
+    def tool_schemas(self, prefix_class=None) -> list[dict]:
         schemas = []
-        for tool_name in self.tool_registry.keys():
+        for tool_name in self._tool_registry.keys():
             schemas.append(self.get_tool_schema(tool_name, prefix_class))
         return schemas
 
-    def get_tool_schema(self, tool_name, prefix_class=None):
-        tool = self.tool_registry[tool_name]
+    def get_tool_schema(self, tool_name: str, prefix_class=None) -> dict:
+        tool = self._tool_registry[tool_name]
         if 'function' in tool:
             the_schema = get_function_schema(tool['function'])
         elif 'model_class' in tool:
@@ -94,7 +92,7 @@ class ToolBox:
             the_schema = insert_prefix(prefix_class, the_schema, self.insert_prefix_name, self.case_insensitive)
         return tool_def(the_schema)
 
-    def process_response(self, response, choice_num=0, prefix_class=None, ignore_prefix=False):
+    def process_response(self, response: ChatCompletion, choice_num=0, prefix_class=None, ignore_prefix=False) -> list[ToolResult]:
         results = []
         if response.choices[choice_num].message.function_call:
             # this is obsolete in openai - but maybe it is used by other llms?
@@ -136,7 +134,7 @@ class ToolBox:
 
     def _process_unpacked(self, tool_name, tool_id, tool_args=None):
         tool_args = {} if tool_args is None else tool_args
-        tool_info = self.tool_registry[tool_name]
+        tool_info = self._tool_registry[tool_name]
         error = None
         if 'model_class' in tool_info:
             model_class = tool_info['model_class']
