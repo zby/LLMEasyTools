@@ -38,9 +38,10 @@ class ToolResult(BaseModel):
         elif self.error is not None:
             content = f"{self.error}"
         return ChatCompletionMessage(
-            role="function",
+            role="tool",
+            tool_call_id=self.tool_call_id,
             name=self.name,
-            content=content
+            content=content,
         )
 
 class ToolBox:
