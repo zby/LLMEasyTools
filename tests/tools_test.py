@@ -129,6 +129,11 @@ def test_process_response():
     results = toolbox.process_response(response)
     assert len(results) == 1
     assert results[0].model == original_user
+    message = results[0].to_message()
+    assert message['role'] == 'tool'
+    assert message['tool_call_id'] == 'A'
+    assert message['name'] == 'UserDetail'
+    assert message['content'] == 'UserDetail created'
 
 
 # Define the test cases
