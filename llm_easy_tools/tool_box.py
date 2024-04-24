@@ -22,7 +22,7 @@ class ToolResult(BaseModel):
         error (Optional[str]): An error message if the tool call failed.
 
     Methods:
-        to_message(): Converts the ToolResult into a ChatCompletionMessage suitable for returning to a chat interface.
+        to_message(): Converts the ToolResult into a dictionary suitable for returning to a chat interface.
     """
     tool_call_id: str
     name: str
