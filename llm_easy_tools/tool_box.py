@@ -90,11 +90,16 @@ class ToolBox:
             if isinstance(attr_value, type) and hasattr(attr_value, 'LLMEasyTools_external_function'):
                 self.register_model(attr_value)
 
-    def tool_schemas(self, prefix_class=None) -> list[dict]:
+    def tool_schemas(self, prefix_class=None, predicate=None) -> list[dict]:
+        if predicate is None:
+            predicate = lambda _: True
         schemas = []
-        for tool_name in self._tool_registry.keys():
+        for tool_name, tool_value in self._tool_registry.items():
+            if not predicate(tool_value):
+                continue
             schemas.append(self.get_tool_schema(tool_name, prefix_class))
         return schemas
+
 
     def get_tool_schema(self, tool_name: str, prefix_class=None) -> dict:
         tool = self._tool_registry[tool_name]
