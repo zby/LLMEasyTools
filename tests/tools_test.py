@@ -33,6 +33,11 @@ class TestTool:
         city: str
         street: str
 
+    @llm_function()
+    def failing_method(self, arg: int) -> str:
+        raise Exception('Some exception')
+
+
 
 tool = TestTool()
 
@@ -81,6 +86,12 @@ def test_process():
     with pytest.raises(KeyError):
         function_call = FunctionCallMock(name="unknown", arguments=json.dumps({'arg': 3}))
         toolbox.process_function(function_call, '')
+
+    function_call = FunctionCallMock(name="failing_method", arguments=json.dumps({"arg": 2}))
+    result = toolbox.process_function(function_call, '')
+    assert isinstance(result, ToolResult)
+    assert "Some exception" in result.error
+
 
 
 class UserDetail(BaseModel):

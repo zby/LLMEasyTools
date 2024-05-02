@@ -190,6 +190,7 @@ class ToolBox:
             result = ToolResult(tool_call_id=tool_id, name=tool_name, model=model, error=error)
         else:
             function = tool_info["function"]
+            output=None
             try:
                 output = function(**tool_args)
             except Exception as e:
