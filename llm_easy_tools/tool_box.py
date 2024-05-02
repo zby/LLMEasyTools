@@ -38,6 +38,8 @@ class ToolResult(BaseModel):
             content = f"{self.name} created"
         elif self.error is not None:
             content = f"{self.error}"
+        else:
+            content = ''
         return {
             "role": "tool",
             "tool_call_id": self.tool_call_id,

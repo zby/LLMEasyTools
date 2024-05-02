@@ -34,6 +34,11 @@ class TestTool:
         street: str
 
     @llm_function()
+    def no_output(self, arg: int):
+        pass
+
+
+    @llm_function()
     def failing_method(self, arg: int) -> str:
         raise Exception('Some exception')
 
@@ -91,6 +96,15 @@ def test_process():
     result = toolbox.process_function(function_call, '')
     assert isinstance(result, ToolResult)
     assert "Some exception" in result.error
+    message = result.to_message()
+    assert "Some exception" in message['content']
+
+    function_call = FunctionCallMock(name="no_output", arguments=json.dumps({"arg": 2}))
+    result = toolbox.process_function(function_call, '')
+    assert isinstance(result, ToolResult)
+    message = result.to_message()
+    assert message['content'] == ''
+
 
 
 
