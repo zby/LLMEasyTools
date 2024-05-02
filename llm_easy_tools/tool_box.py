@@ -4,7 +4,7 @@ import traceback
 
 from typing import Callable
 from pprint import pprint
-from typing import Type, Optional
+from typing import Type, Optional, List
 from pydantic import BaseModel
 
 from llm_easy_tools.schema_generator import get_function_schema, get_model_schema, get_name, insert_prefix, tool_def, llm_function
@@ -29,6 +29,7 @@ class ToolResult(BaseModel):
     output: Optional[str] = None
     model: Optional[BaseModel] = None
     error: Optional[str] = None
+    soft_errors: List[str] = []
 
     def to_message(self):
         if self.output is not None:
@@ -111,7 +112,7 @@ class ToolBox:
             the_schema = insert_prefix(prefix_class, the_schema, self.insert_prefix_name, self.case_insensitive)
         return tool_def(the_schema)
 
-    def process_response(self, response: ChatCompletion, choice_num=0, prefix_class=None, ignore_prefix=False) -> list[ToolResult]:
+    def process_response(self, response: ChatCompletion, choice_num=0, prefix_class=None) -> list[ToolResult]:
         """
         Processes a ChatCompletion response, executing contained tool calls.
         The result of the tool call is returned as a ToolResult object.
@@ -131,12 +132,21 @@ class ToolBox:
         if hasattr(response.choices[choice_num].message, 'function_call') and response.choices[choice_num].message.function_call:
             # this is obsolete in openai - but maybe it is used by other llms?
             function_call = response.choices[choice_num].message.function_call
-            result = self.process_function(function_call, None, prefix_class, ignore_prefix)
+            result = self.process_function(function_call, None, prefix_class)
             results.append(result)
         if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
-                result = self.process_function(tool_call.function, tool_call.id, prefix_class, ignore_prefix)
-                results.append(result)
+                result = self.process_function(tool_call.function, tool_call.id, prefix_class)
+                if result.error is not None and prefix_class is not None:
+                    soft_error = result.error
+                    new_result = self.process_function(tool_call.function, tool_call.id, prefix_class, ignore_prefix=True)
+                    if new_result.error is None:
+                        new_result.soft_errors = [soft_error]
+                        results.append(new_result)
+                    else:
+                        result.append(result)
+                else:
+                    results.append(result)
         return results
 
     def process_function(self, function_call, tool_id, prefix_class=None, ignore_prefix=False):
