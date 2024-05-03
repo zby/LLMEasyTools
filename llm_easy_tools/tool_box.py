@@ -8,7 +8,8 @@ from typing import Type, Optional, List
 from pydantic import BaseModel
 
 from llm_easy_tools.schema_generator import get_function_schema, get_model_schema, get_name, insert_prefix, tool_def, llm_function
-from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion
+from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
+from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
 class ToolResult(BaseModel):
     """
@@ -53,8 +54,8 @@ class ToolBox:
                  case_insensitive: bool = False,
                  insert_prefix_name: bool = True,
                  ):
-        self._tool_registry = {}
-        self._tool_sets = {}
+        self._tool_registry: dict[str, dict[str, Callable | Type[BaseModel]]] = {}
+        self._tool_sets: dict[str, object] = {}
         self.fix_json_args = fix_json_args
         self.case_insensitive = case_insensitive
         self.insert_prefix_name = insert_prefix_name
@@ -238,14 +239,14 @@ if __name__ == "__main__":
     chat_completion_message = ChatCompletionMessage(
         role="assistant",
         tool_calls=[
-            {
-                "id": 'A',
-                "type": 'function',
-                "function": {
-                    "arguments": json.dumps({"count": 1, "size": 2.2}),
-                    "name": 'simple_method'
-                }
-            }
+            ChatCompletionMessageToolCall( 
+                id ='A',
+                type = 'function',
+                function = Function(
+                    arguments = json.dumps({"count": 1, "size": 2.2}),
+                    name = 'simple_method'
+                )
+            )
         ]
     )
 
@@ -253,7 +254,7 @@ if __name__ == "__main__":
         id='A',
         created=0,
         model='A',
-        choices=[{'finish_reason': 'stop', 'index': 0, 'message': chat_completion_message}],
+        choices=[Choice(finish_reason='stop', index=0, message=chat_completion_message)],
         object='chat.completion'
     )
 
