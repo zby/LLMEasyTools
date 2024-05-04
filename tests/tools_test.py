@@ -165,8 +165,6 @@ def test_process_response():
 
 # Define the test cases
 def test_register_tool():
-    class Tool(BaseModel):
-        name: str
 
     def example_tool(name: str):
         print(f'Running test tool with name param: "{name}"')
@@ -196,6 +194,7 @@ def test_register_tool():
     assert function_info["function"] == bad_name_tool
 
 def test_register_model():
+
     class Tool(BaseModel):
         name: str
 
@@ -216,8 +215,6 @@ def test_register_model():
     assert toolbox.get_tool_schema('WikiSearch')['function']['name'] == 'WikiSearch'
 
 def test_prefixing():
-    class Tool(BaseModel):
-        name: str
 
     class Reflection(BaseModel):
         relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
@@ -232,6 +229,7 @@ def test_prefixing():
     function_schema = tool_schemas[0]['function']
     first_param_name = list(function_schema['parameters']['properties'].keys())[0]
     assert first_param_name == 'relevancy'
+    assert function_schema['name'] == 'Reflection_and_example_tool'
 
     args = { 'relevancy': 'good', 'name': 'hammer'}
     prefix = toolbox._extract_prefix_unpacked(args, Reflection)
@@ -240,6 +238,7 @@ def test_prefixing():
 
 
 def test_process_function_with_prefixing():
+
     class Reflection(BaseModel):
         relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
 
