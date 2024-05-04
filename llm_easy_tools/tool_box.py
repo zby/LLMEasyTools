@@ -98,7 +98,7 @@ class ToolBox:
             init_function.LLMEasyTools_schema_name = model_class.__name__
         else:
             init_function.LLMEasyTools_schema_name = model_class.LLMEasyTools_schema_name
-        init_function.LLMEasyTools_model_init_message = f"{model_class.__name__} created"
+        init_function.LLMEasyTools_model_init = True
         self.register_function(init_function)
 
     def register_toolset(self, obj: object, key=None) -> None:
@@ -216,9 +216,8 @@ class ToolBox:
             output = function(**tool_args)
         except Exception as e:
             error = traceback.format_exc()
-        if hasattr(function, 'LLMEasyTools_model_init_message'):
-            content = function.LLMEasyTools_model_init_message
-            result = ToolResult(tool_call_id=tool_id, name=tool_name, output=content, model=output, error=error)
+        if hasattr(function, 'LLMEasyTools_model_init'):
+            result = ToolResult(tool_call_id=tool_id, name=tool_name, model=output, error=error)
         else:
             result = ToolResult(tool_call_id=tool_id, name=tool_name, output=output, error=error)
         return result
