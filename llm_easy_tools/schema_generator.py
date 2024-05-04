@@ -49,10 +49,10 @@ def _recursive_purge_titles(d: Dict[str, Any]) -> None:
             else:
                 _recursive_purge_titles(d[key])
 
-def get_name(func_or_model: Union[Callable, Type[BaseModel]], case_insensitive: bool) -> str:
-    schema_name = func_or_model.__name__
-    if hasattr(func_or_model, 'LLMEasyTools_schema_name'):
-        schema_name = func_or_model.LLMEasyTools_schema_name
+def get_name(func: Callable, case_insensitive: bool) -> str:
+    schema_name = func.__name__
+    if hasattr(func, 'LLMEasyTools_schema_name'):
+        schema_name = func.LLMEasyTools_schema_name
     if case_insensitive:
         schema_name = schema_name.lower()
     return schema_name
@@ -68,16 +68,6 @@ def get_function_schema(function: Callable, case_insensitive: bool=False) -> dic
         model_json_schema = model.model_json_schema()
         _recursive_purge_titles(model_json_schema)
         function_schema['parameters'] = model_json_schema
-    return function_schema
-
-def get_model_schema(model_class: Type[BaseModel], case_insensitive: bool=False) -> dict:
-    function_schema = {
-        'name': get_name(model_class, case_insensitive),
-        'description': (model_class.__doc__ or '').strip(),
-    }
-    model_json_schema = model_class.model_json_schema()
-    _recursive_purge_titles(model_json_schema)
-    function_schema['parameters'] = model_json_schema
     return function_schema
 
 def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = True):

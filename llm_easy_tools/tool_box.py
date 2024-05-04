@@ -7,7 +7,7 @@ from pprint import pprint
 from typing import Type, Optional, List
 from pydantic import BaseModel
 
-from llm_easy_tools.schema_generator import get_function_schema, get_model_schema, get_name, insert_prefix, tool_def, llm_function
+from llm_easy_tools.schema_generator import get_function_schema, get_name, insert_prefix, tool_def, llm_function
 from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
@@ -69,13 +69,37 @@ class ToolBox:
 
         self._tool_registry[function_name] = { 'function': function }
 
+    def _model_init_factory(self, model: Type[BaseModel]) -> Callable:
+        """
+        Creates a function to initialize a given Pydantic model.
+
+        Parameters:
+            Model (Type[BaseModel]): A Pydantic model class.
+
+        Returns:
+            Callable: A function that initializes the Pydantic model.
+        """
+        # Create a function that accepts any keyword arguments
+        def init_func(**data):
+            return model(**data)
+
+        # Copy the docstring from the model to the new function
+        init_func.__doc__ = model.__doc__
+
+        # Copying the signature from the model to the new function for better tooling support
+        # This makes the function signature mimic the fields of the Pydantic model
+        sig = inspect.signature(model)
+        init_func.__signature__ = sig
+        return init_func
+
     def register_model(self, model_class: Type[BaseModel]) -> None:
-        model_name = get_name(model_class, self.case_insensitive)
-
-        if model_name in self._tool_registry:
-            raise Exception(f"Trying to register {model_name} which is already registered")
-
-        self._tool_registry[model_name] = { 'model_class': model_class}
+        init_function = self._model_init_factory(model_class)
+        if not hasattr(model_class, 'LLMEasyTools_schema_name'):
+            init_function.LLMEasyTools_schema_name = model_class.__name__
+        else:
+            init_function.LLMEasyTools_schema_name = model_class.LLMEasyTools_schema_name
+        init_function.LLMEasyTools_model_init_message = f"{model_class.__name__} created"
+        self.register_function(init_function)
 
     def register_toolset(self, obj: object, key=None) -> None:
         if key is None:
@@ -186,23 +210,17 @@ class ToolBox:
         tool_args = {} if tool_args is None else tool_args
         tool_info = self._tool_registry[tool_name]
         error = None
-        if 'model_class' in tool_info:
-            model_class = tool_info['model_class']
-            model = None
-            try:
-                model = model_class(**tool_args)
-            except Exception as e:
-                error = traceback.format_exc()
-            result = ToolResult(tool_call_id=tool_id, name=tool_name, model=model, error=error)
+        function = tool_info["function"]
+        output=None
+        try:
+            output = function(**tool_args)
+        except Exception as e:
+            error = traceback.format_exc()
+        if hasattr(function, 'LLMEasyTools_model_init_message'):
+            content = function.LLMEasyTools_model_init_message
+            result = ToolResult(tool_call_id=tool_id, name=tool_name, output=content, model=output, error=error)
         else:
-            function = tool_info["function"]
-            output=None
-            try:
-                output = function(**tool_args)
-            except Exception as e:
-                error = traceback.format_exc()
             result = ToolResult(tool_call_id=tool_id, name=tool_name, output=output, error=error)
-
         return result
 
     def _extract_prefix_unpacked(self, tool_args, prefix_class):

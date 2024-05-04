@@ -3,7 +3,9 @@ import pytest
 from typing import List, Optional, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator
 
-from llm_easy_tools import get_function_schema, llm_function, insert_prefix
+from llm_easy_tools import get_function_schema, insert_prefix, llm_function
+
+from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles
 
 from pprint import pprint
 
@@ -136,4 +138,27 @@ def test_noparams_function_merge():
     new_schema = insert_prefix(Reflection, function_schema)
     assert len(new_schema['parameters']['properties']) == 2
     assert new_schema['name'] == 'reflection_and_function_no_params'
+
+def test_model_init_function():
+
+    class User(BaseModel):
+        """A user object"""
+        name: str
+        city: str
+
+    def the_init(name: str, city: str):
+        return User(name=name, city=city)
+    the_init.__doc__ = User.__doc__
+
+    the_init.LLMEasyTools_schema_name = 'User'
+
+    model = parameters_basemodel_from_function(the_init)
+    assert _recursive_purge_titles(model.model_json_schema()) == _recursive_purge_titles(User.model_json_schema())
+
+
+    function_schema = get_function_schema(the_init)
+    assert function_schema['name'] == 'User'
+    assert function_schema['description'] == 'A user object'
+    assert len(function_schema['parameters']['properties']) == 2
+    assert len(function_schema['parameters']['required']) == 2
 

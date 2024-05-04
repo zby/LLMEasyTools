@@ -203,13 +203,13 @@ def test_register_model():
 
     toolbox = ToolBox()
     toolbox.register_model(Tool)
+    x = toolbox._tool_registry['Tool']['function'](name="Some name")
+    assert x.name == 'Some name'
 
-    assert toolbox._tool_registry['Tool']["model_class"] is Tool
     assert len(toolbox.tool_schemas()) == 1
     assert toolbox.tool_schemas()[0]['function']['name'] == 'Tool'
 
     toolbox.register_model(WikiSearch)
-    assert toolbox._tool_registry['WikiSearch']["model_class"] is WikiSearch
     assert len(toolbox.tool_schemas()) == 2
 
     assert toolbox.get_tool_schema('WikiSearch')['function']['name'] == 'WikiSearch'
