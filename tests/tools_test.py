@@ -59,7 +59,9 @@ def test_register_toolset():
     # Test the normal case
     tool_manager.register_toolset(tool)
 
-    assert 'TestTool' in tool_manager._tool_sets
+    toolset = tool_manager.get_toolset('TestTool')
+    assert toolset == tool
+
     assert 'tool_method' in tool_manager._tool_registry
     assert 'additional_tool_method' in tool_manager._tool_registry
     assert 'User' in tool_manager._tool_registry
