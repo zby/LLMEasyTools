@@ -37,10 +37,8 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
             type_ = parameter.annotation.__args__[0]
         default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
         fields[name] = (type_, pd.Field(default, description=description))
-    if len(fields) > 0:
-        return pd.create_model(f'{function.__name__}_ParameterModel', **fields)
-    else:
-        return None
+    return pd.create_model(f'{function.__name__}_ParameterModel', **fields)
+
 
 def _recursive_purge_titles(d: Dict[str, Any]) -> None:
     """Remove a titles from a schema recursively"""
@@ -66,7 +64,7 @@ def get_function_schema(function: Callable, case_insensitive: bool=False) -> dic
         'description': (function.__doc__ or '').strip(),
     }
     model = parameters_basemodel_from_function(function)
-    if model is not None:
+    if model.model_fields:
         model_json_schema = model.model_json_schema()
         _recursive_purge_titles(model_json_schema)
         function_schema['parameters'] = model_json_schema
