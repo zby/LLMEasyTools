@@ -28,7 +28,7 @@ response = client.chat.completions.create(
 results = toolbox.process_response(response)
 
 #pprint(results)
-pprint(results[0].model)
+pprint(results[0].output)
 
 def contact_user(name: str, city: str) -> str:
     return f"User {name} from {city} was contactd"

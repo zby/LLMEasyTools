@@ -94,7 +94,7 @@ response = client.chat.completions.create(
 # There might be more than one tool calls and more than one result
 results = toolbox.process_response(response)
 
-pprint(results[0].model)
+pprint(results[0].output)
 ```
 Output:
 ```

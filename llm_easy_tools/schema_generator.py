@@ -118,13 +118,7 @@ class ExampleClass:
 
 example_object = ExampleClass()
 
-@llm_function(schema_name="altered_name")
-class UserDetail(BaseModel):
-    name: str
-    city: str
-
 
 if __name__ == "__main__":
-    #pprint(get_function_schema(example_object.simple_method))
-    pprint(get_model_schema(UserDetail))
+    pprint(get_function_schema(example_object.simple_method))
 
