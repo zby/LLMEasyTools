@@ -132,10 +132,7 @@ class ToolBox:
 
     def get_tool_schema(self, tool_name: str, prefix_class=None) -> dict:
         tool = self._tool_registry[tool_name]
-        if 'function' in tool:
-            the_schema = get_function_schema(tool['function'])
-        elif 'model_class' in tool:
-            the_schema = get_model_schema(tool['model_class'])
+        the_schema = get_function_schema(tool['function'])
         if prefix_class is not None:
             the_schema = insert_prefix(prefix_class, the_schema, self.insert_prefix_name, self.case_insensitive)
         return tool_def(the_schema)
