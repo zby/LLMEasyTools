@@ -4,7 +4,7 @@ import traceback
 
 from typing import Callable
 from pprint import pprint
-from typing import Type, Optional, List
+from typing import Type, Optional, List, Union
 from pydantic import BaseModel
 
 from llm_easy_tools.schema_generator import get_function_schema, get_name, insert_prefix, tool_def, llm_function
@@ -27,18 +27,17 @@ class ToolResult(BaseModel):
     """
     tool_call_id: str
     name: str
-    output: Optional[str] = None
-    model: Optional[BaseModel] = None
+    output: Optional[Union[str, BaseModel]] = None
     error: Optional[str] = None
     soft_errors: List[str] = []
 
     def to_message(self):
-        if self.output is not None:
-            content = self.output
-        elif self.model is not None:
-            content = f"{self.name} created"
-        elif self.error is not None:
+        if self.error is not None:
             content = f"{self.error}"
+        elif isinstance(self.output, BaseModel):
+            content = f"{self.name} created"
+        elif self.output is not None:
+            content = self.output
         else:
             content = ''
         return {
@@ -98,7 +97,6 @@ class ToolBox:
             init_function.LLMEasyTools_schema_name = model_class.__name__
         else:
             init_function.LLMEasyTools_schema_name = model_class.LLMEasyTools_schema_name
-        init_function.LLMEasyTools_model_init = True
         self.register_function(init_function)
 
     def register_toolset(self, obj: object, key=None) -> None:
@@ -216,10 +214,7 @@ class ToolBox:
             output = function(**tool_args)
         except Exception as e:
             error = traceback.format_exc()
-        if hasattr(function, 'LLMEasyTools_model_init'):
-            result = ToolResult(tool_call_id=tool_id, name=tool_name, model=output, error=error)
-        else:
-            result = ToolResult(tool_call_id=tool_id, name=tool_name, output=output, error=error)
+        result = ToolResult(tool_call_id=tool_id, name=tool_name, output=output, error=error)
         return result
 
     def _extract_prefix_unpacked(self, tool_args, prefix_class):

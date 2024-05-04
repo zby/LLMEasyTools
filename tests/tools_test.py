@@ -121,7 +121,7 @@ def test_process_model():
     original_user = UserDetail(name="John", age=21)
     function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
     result = toolbox.process_function(function_call, '')
-    assert result.model == original_user
+    assert result.output == original_user
 
 def mk_chat_with_tool_call(name, args):
     message = ChatCompletionMessage(
@@ -155,7 +155,7 @@ def test_process_response():
     response = mk_chat_with_tool_call("UserDetail", original_user.model_dump())
     results = toolbox.process_response(response)
     assert len(results) == 1
-    assert results[0].model == original_user
+    assert results[0].output == original_user
     message = results[0].to_message()
     assert message['role'] == 'tool'
     assert message['tool_call_id'] == 'A'
@@ -265,7 +265,7 @@ def test_json_fix():
     json_data = json_data + ',}'
     function_call = FunctionCallMock(name="UserDetail", arguments=json_data)
     result = toolbox.process_function(function_call, '')
-    assert result.model == original_user
+    assert result.output == original_user
 
     toolbox.fix_json_args = False
     result = toolbox.process_function(function_call, '')
