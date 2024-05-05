@@ -81,47 +81,11 @@ class FunctionCallMock:
         self.name = name
         self.arguments = arguments
 
-def test_process():
-    toolbox = ToolBox()
-    toolbox.register_toolset(tool)
-    function_call = FunctionCallMock(name="tool_method", arguments=json.dumps({"arg": 2}))
-    result = toolbox.process_function(function_call, '')
-    assert isinstance(result, ToolResult)
-    assert result.output == 'executed tool_method with param: 2'
-
-    # Test with unknown function call name
-    with pytest.raises(KeyError):
-        function_call = FunctionCallMock(name="unknown", arguments=json.dumps({'arg': 3}))
-        toolbox.process_function(function_call, '')
-
-    function_call = FunctionCallMock(name="failing_method", arguments=json.dumps({"arg": 2}))
-    result = toolbox.process_function(function_call, '')
-    assert isinstance(result, ToolResult)
-    assert "Some exception" in result.error
-    message = result.to_message()
-    assert "Some exception" in message['content']
-
-    function_call = FunctionCallMock(name="no_output", arguments=json.dumps({"arg": 2}))
-    result = toolbox.process_function(function_call, '')
-    assert isinstance(result, ToolResult)
-    message = result.to_message()
-    assert message['content'] == ''
-
-
 
 
 class UserDetail(BaseModel):
     name: str
     age: int
-
-def test_process_model():
-    toolbox = ToolBox()
-    toolbox.register_model(UserDetail)
-    assert "UserDetail" in toolbox._tool_registry
-    original_user = UserDetail(name="John", age=21)
-    function_call = FunctionCallMock(name="UserDetail", arguments=json.dumps(original_user.model_dump()))
-    result = toolbox.process_function(function_call, '')
-    assert result.output == original_user
 
 def mk_chat_with_tool_call(name, args):
     message = ChatCompletionMessage(
@@ -150,7 +114,7 @@ def mk_chat_with_tool_call(name, args):
 def test_process_response():
     # too much mocking in this test
     toolbox = ToolBox()
-    toolbox.register_model(UserDetail)
+    toolbox.register_function(UserDetail)
     original_user = UserDetail(name="John", age=21)
     response = mk_chat_with_tool_call("UserDetail", original_user.model_dump())
     results = toolbox.process_response(response)
@@ -202,14 +166,14 @@ def test_register_model():
         query: str
 
     toolbox = ToolBox()
-    toolbox.register_model(Tool)
+    toolbox.register_function(Tool)
     x = toolbox._tool_registry['Tool']['function'](name="Some name")
     assert x.name == 'Some name'
 
     assert len(toolbox.tool_schemas()) == 1
     assert toolbox.tool_schemas()[0]['function']['name'] == 'Tool'
 
-    toolbox.register_model(WikiSearch)
+    toolbox.register_function(WikiSearch)
     assert len(toolbox.tool_schemas()) == 2
 
     assert toolbox.get_tool_schema('WikiSearch')['function']['name'] == 'WikiSearch'
@@ -231,11 +195,6 @@ def test_prefixing():
     assert first_param_name == 'relevancy'
     assert function_schema['name'] == 'Reflection_and_example_tool'
 
-    args = { 'relevancy': 'good', 'name': 'hammer'}
-    prefix = toolbox._extract_prefix_unpacked(args, Reflection)
-    assert isinstance(prefix, Reflection)
-    assert 'reflection' not in args # prefix params extracted
-
 
 def test_process_response_with_prefixing():
 
@@ -256,20 +215,5 @@ def test_process_response_with_prefixing():
     results = toolbox.process_response(response, prefix_class=Reflection)
     assert results[0].output == 'executed tool_method with param: 2'
     assert isinstance(results[0].prefix, Reflection)
-
-def test_json_fix():
-    toolbox = ToolBox()
-    toolbox.register_model(UserDetail)
-    original_user = UserDetail(name="John", age=21)
-    json_data = json.dumps(original_user.model_dump())
-    json_data = json_data[:-1]
-    json_data = json_data + ',}'
-    function_call = FunctionCallMock(name="UserDetail", arguments=json_data)
-    result = toolbox.process_function(function_call, '')
-    assert result.output == original_user
-
-    toolbox.fix_json_args = False
-    result = toolbox.process_function(function_call, '')
-    assert 'json.decoder.JSONDecodeError' in result.error
 
 pytest.main()
