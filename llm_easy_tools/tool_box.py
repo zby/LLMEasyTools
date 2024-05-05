@@ -31,7 +31,7 @@ class ToolResult(BaseModel):
     error: Optional[str] = None
     soft_errors: List[str] = []
 
-    def to_message(self):
+    def to_message(self) -> dict[str, str]:
         if self.error is not None:
             content = f"{self.error}"
         elif isinstance(self.output, BaseModel):
@@ -174,7 +174,7 @@ class ToolBox:
                     results.append(result)
         return results
 
-    def process_function(self, function_call, tool_id, prefix_class=None, ignore_prefix=False):
+    def process_function(self, function_call, tool_id, prefix_class=None, ignore_prefix=False) -> ToolResult:
         tool_name = function_call.name
         args = function_call.arguments
         try:
@@ -201,7 +201,7 @@ class ToolBox:
         return self._process_unpacked(tool_name, tool_id, tool_args)
 
 
-    def _process_unpacked(self, tool_name, tool_id, tool_args=None):
+    def _process_unpacked(self, tool_name, tool_id, tool_args=None) -> ToolResult:
         tool_args = {} if tool_args is None else tool_args
         tool_info = self._tool_registry[tool_name]
         error = None
