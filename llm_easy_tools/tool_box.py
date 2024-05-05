@@ -5,7 +5,7 @@ import traceback
 from typing import Callable
 from pprint import pprint
 from typing import Type, Optional, List, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from llm_easy_tools.schema_generator import get_function_schema, get_name, insert_prefix, tool_def, llm_function
 from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
@@ -163,19 +163,10 @@ class ToolBox:
         if response.choices[choice_num].message.tool_calls:
             for tool_call in response.choices[choice_num].message.tool_calls:
                 result = self.process_function(tool_call.function, tool_call.id, prefix_class)
-                if result.error is not None and prefix_class is not None:
-                    soft_error = result.error
-                    new_result = self.process_function(tool_call.function, tool_call.id, prefix_class, ignore_prefix=True)
-                    if new_result.error is None:
-                        new_result.soft_errors = [soft_error]
-                        results.append(new_result)
-                    else:
-                        result.append(result)
-                else:
-                    results.append(result)
+                results.append(result)
         return results
 
-    def process_function(self, function_call, tool_id, prefix_class=None, ignore_prefix=False) -> ToolResult:
+    def process_function(self, function_call, tool_id, prefix_class=None) -> ToolResult:
         tool_name = function_call.name
         args = function_call.arguments
         try:
@@ -188,20 +179,23 @@ class ToolBox:
                 error = traceback.format_exc()
                 return ToolResult(tool_call_id=tool_id, name=tool_name, error=error)
 
+        prefix = None
+        soft_errors = []
         if prefix_class is not None:
-            if not ignore_prefix:
-                # todo make better API for returning the prefix
+            try:
                 prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
+            except ValidationError as e:
+                soft_errors.append(traceback.format_exc())
             prefix_name = prefix_class.__name__
             if self.case_insensitive:
                 prefix_name = prefix_name.lower()
-            if not tool_name.startswith(prefix_name) and not ignore_prefix:
-                raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
-            elif tool_name.startswith(prefix_name):
+            if not tool_name.startswith(prefix_name):
+                soft_errors.append(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
+            else:
                 tool_name = tool_name[len(prefix_name + '_and_'):]
         result = self._process_unpacked(tool_name, tool_id, tool_args)
-        if prefix_class is not None:
-            result.prefix = prefix
+        result.prefix = prefix
+        result.soft_errors = soft_errors
         return result
 
 

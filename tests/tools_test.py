@@ -237,7 +237,7 @@ def test_prefixing():
     assert 'reflection' not in args # prefix params extracted
 
 
-def test_process_function_with_prefixing():
+def test_process_response_with_prefixing():
 
     class Reflection(BaseModel):
         relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
@@ -245,16 +245,17 @@ def test_process_function_with_prefixing():
     toolbox = ToolBox()
     toolbox.register_toolset(tool)
     prefixed_name = 'Reflection_and_tool_method'
-    no_reflection_function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps({'arg': 2}))
-    with pytest.raises(Exception) as exception_info:
-        toolbox.process_function(no_reflection_function_call, '', prefix_class=Reflection)
-    assert isinstance(exception_info.value, ValidationError)
+    response = mk_chat_with_tool_call(prefixed_name, {'arg': 2})
+    results = toolbox.process_response(response, prefix_class=Reflection)
+    assert results[0].output == 'executed tool_method with param: 2'
+    assert results[0].prefix is None
+    assert len(results[0].soft_errors) == 1
     args = {'arg': 2}
     args['relevancy'] = 'very good'
-    function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps(args))
-    result = toolbox.process_function(function_call, '', prefix_class=Reflection)
-    assert result.output == 'executed tool_method with param: 2'
-    assert isinstance(result.prefix, Reflection)
+    response = mk_chat_with_tool_call(prefixed_name, args)
+    results = toolbox.process_response(response, prefix_class=Reflection)
+    assert results[0].output == 'executed tool_method with param: 2'
+    assert isinstance(results[0].prefix, Reflection)
 
 def test_json_fix():
     toolbox = ToolBox()
