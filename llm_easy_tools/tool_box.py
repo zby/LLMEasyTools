@@ -92,7 +92,6 @@ if __name__ == "__main__":
     toolbox.register_function(example_object.simple_method)
 #    pprint(generate_tools(function_with_doc, function_decorated))
     pprint(toolbox.tool_schemas())
-    pprint(toolbox._process_unpacked('altered_name', 'aaa'))
 
     chat_completion_message = ChatCompletionMessage(
         role="assistant",
