@@ -61,7 +61,7 @@ def test_process():
     tool_call = mk_tool_call("failing_method", json.dumps({"arg": 2}))
     result = process_tool_call(tool_call, [tool.failing_method])
     assert isinstance(result, ToolResult)
-    assert "Some exception" in result.error
+    assert "Some exception" in str(result.error)
     message = result.to_message()
     assert "Some exception" in message['content']
 
@@ -99,5 +99,5 @@ def test_json_fix():
     assert len(result.soft_errors) > 0
 
     result = process_tool_call(tool_call, [UserDetail], fix_json_args=False)
-    assert 'json.decoder.JSONDecodeError' in result.error
+    assert isinstance(result.error, json.decoder.JSONDecodeError)
 
