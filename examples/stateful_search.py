@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from llm_easy_tools import ToolBox, llm_function
+from llm_easy_tools import llm_function, get_toolset_tools, get_tool_defs, process_response
 import re
 from openai import OpenAI
 
@@ -55,35 +55,30 @@ class DocumentManager:
 # Create an instance of DocumentManager
 doc_manager = DocumentManager()
 
-# Create a ToolBox instance
-toolbox = ToolBox()
-
-# Register the methods of the DocumentManager instance
-toolbox.register_toolset(doc_manager)
 
 client = OpenAI()
 # Example LLM call to search for a document
 response_search = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Find a document about AI"}],
-    tools=toolbox.tool_schemas(),
+    tools=get_tool_defs(get_toolset_tools(doc_manager)),
     tool_choice="auto"
 )
 
 # Process the response to search for the document
 
-results_search = toolbox.process_response(response_search)
+results_search = process_response(response_search, get_toolset_tools(doc_manager))
 print(results_search[0].output)
 
 # Example LLM call to look up a word in the current document
 response_lookup = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Look up the word 'evolving'"}],
-    tools=toolbox.tool_schemas(),
+    tools=get_tool_defs(get_toolset_tools(doc_manager)),
     tool_choice="auto",
 )
 # Process the response to look up the word
-results_lookup = toolbox.process_response(response_lookup)
+results_lookup = process_response(response_lookup, get_toolset_tools(doc_manager))
 print(results_lookup[0].output)
 
 

@@ -70,6 +70,10 @@ def test_nested():
         apple: str = Field(description="The apple")
         banana: str = Field(description="The banana")
 
+    class FooAndBar(BaseModel):
+        foo: Foo
+        bar: Bar
+
     def nested_structure_function(foo: Foo, bars: List[Bar]):
         """spams everything"""
         pass
@@ -77,6 +81,10 @@ def test_nested():
     function_schema = get_function_schema(nested_structure_function)
     assert function_schema['name'] == 'nested_structure_function'
     assert function_schema['description'] == 'spams everything'
+    assert len(function_schema['parameters']['properties']) == 2
+
+    function_schema = get_function_schema(FooAndBar)
+    assert function_schema['name'] == 'FooAndBar'
     assert len(function_schema['parameters']['properties']) == 2
 
 

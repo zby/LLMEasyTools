@@ -25,6 +25,9 @@ def tool_def(function_schema: dict) -> dict:
         "function": function_schema,
     }
 
+def get_tool_defs(functions: list[Callable]) -> list[dict]:
+    return [tool_def(get_function_schema(function)) for function in functions]
+
 def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]:
     fields = {}
     parameters = inspect.signature(function).parameters
@@ -118,7 +121,15 @@ class ExampleClass:
 
 example_object = ExampleClass()
 
+class User(BaseModel):
+    name: str
+    age: int
 
 if __name__ == "__main__":
-    pprint(get_function_schema(example_object.simple_method))
+    pprint(get_tool_defs([
+        example_object.simple_method, 
+        function_with_doc, 
+        function_decorated,
+        User
+        ]))
 
