@@ -30,6 +30,7 @@ class ToolResult(BaseModel):
     output: Optional[Union[str, BaseModel]] = None
     error: Optional[str] = None
     soft_errors: List[str] = []
+    prefix: Optional[BaseModel] = None
 
     def to_message(self) -> dict[str, str]:
         if self.error is not None:
@@ -190,7 +191,7 @@ class ToolBox:
         if prefix_class is not None:
             if not ignore_prefix:
                 # todo make better API for returning the prefix
-                self.prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
+                prefix = self._extract_prefix_unpacked(tool_args, prefix_class)
             prefix_name = prefix_class.__name__
             if self.case_insensitive:
                 prefix_name = prefix_name.lower()
@@ -198,7 +199,10 @@ class ToolBox:
                 raise ValueError(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'")
             elif tool_name.startswith(prefix_name):
                 tool_name = tool_name[len(prefix_name + '_and_'):]
-        return self._process_unpacked(tool_name, tool_id, tool_args)
+        result = self._process_unpacked(tool_name, tool_id, tool_args)
+        if prefix_class is not None:
+            result.prefix = prefix
+        return result
 
 
     def _process_unpacked(self, tool_name, tool_id, tool_args=None) -> ToolResult:

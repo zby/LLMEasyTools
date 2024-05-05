@@ -254,7 +254,7 @@ def test_process_function_with_prefixing():
     function_call = FunctionCallMock(name=prefixed_name, arguments=json.dumps(args))
     result = toolbox.process_function(function_call, '', prefix_class=Reflection)
     assert result.output == 'executed tool_method with param: 2'
-    assert isinstance(toolbox.prefix, Reflection)
+    assert isinstance(result.prefix, Reflection)
 
 def test_json_fix():
     toolbox = ToolBox()
