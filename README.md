@@ -41,9 +41,7 @@ pytest -v tests
 ### Basic Example: Dispatching to a function
 
 ```python
-
 from llm_easy_tools import get_tool_defs, process_response
-from pydantic import BaseModel
 from openai import OpenAI
 from pprint import pprint
 
@@ -72,7 +70,14 @@ User John from Warsaw was contacted
 ### Example: Getting structured data from LLM
 
 ```python
-## Define a Pydantic model for your tool's output
+from llm_easy_tools import get_tool_defs, process_response
+from pydantic import BaseModel
+from openai import OpenAI
+from pprint import pprint
+
+client = OpenAI()
+
+# Define a Pydantic model for your tool's output
 class UserDetail(BaseModel):
     name: str
     city: str

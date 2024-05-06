@@ -5,20 +5,6 @@ from pprint import pprint
 
 client = OpenAI()
 
-def contact_user(name: str, city: str) -> str:
-    return f"User {name} from {city} was contactd"
-
-response = client.chat.completions.create(
-    model="gpt-3.5-turbo-1106",
-    messages=[{"role": "user", "content": "Contact John. John lives in Warsaw"}],
-    tools=get_tool_defs([contact_user]),
-    tool_choice={"type": "function", "function": {"name": "contact_user"}},
-)
-# There might be more than one tool calls in a single response so results are a list
-results = process_response(response, [contact_user])
-
-pprint(results[0].output)
-
 # Define a Pydantic model for your tool's output
 class UserDetail(BaseModel):
     name: str
