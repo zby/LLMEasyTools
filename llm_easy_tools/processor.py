@@ -127,7 +127,13 @@ def _extract_prefix_unpacked(tool_args, prefix_class):
     prefix = prefix_class(**prefix_args)
     return(prefix)
 
-def process_response(response: ChatCompletion, functions: List[Callable], choice_num=0, prefix_class=None) -> list[ToolResult]:
+def process_response(
+        response: ChatCompletion,
+        functions: List[Callable],
+        choice_num=0,
+        prefix_class=None,
+        case_insensitive=False
+        ) -> list[ToolResult]:
     """
     Processes a ChatCompletion response, executing contained tool calls.
     For each tool call matches a function from the 'functions' list by name.
@@ -152,7 +158,7 @@ def process_response(response: ChatCompletion, functions: List[Callable], choice
     else:
         tool_calls = []
     for tool_call in tool_calls:
-        result = process_tool_call(tool_call, functions, prefix_class)
+        result = process_tool_call(tool_call, functions, prefix_class, case_insensitive=case_insensitive)
         results.append(result)
     return results
 

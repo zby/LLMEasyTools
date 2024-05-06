@@ -3,9 +3,9 @@ import pytest
 from typing import List, Optional, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator
 
-from llm_easy_tools import get_function_schema, insert_prefix, llm_function
+from llm_easy_tools import get_function_schema, insert_prefix, llm_function 
 
-from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles
+from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles, get_name
 
 from pprint import pprint
 
@@ -120,7 +120,7 @@ def test_merge_schemas():
 
     function_schema = get_function_schema(simple_function)
     new_schema = insert_prefix(Reflection, function_schema)
-    assert new_schema['name'] == "reflection_and_simple_function"
+    assert new_schema['name'] == "Reflection_and_simple_function"
     assert len(new_schema['parameters']['properties']) == 4
     assert len(new_schema['parameters']['required']) == 3
     assert len(function_schema['parameters']['properties']) == 2  # the old schema is not changed
@@ -128,6 +128,9 @@ def test_merge_schemas():
     param_names = list(new_schema['parameters']['properties'].keys())
     assert param_names == ['relevancy', 'next_actions_plan', 'count', 'size']
 
+    function_schema = get_function_schema(simple_function)
+    new_schema = insert_prefix(Reflection, function_schema, case_insensitive=True)
+    assert new_schema['name'] == "reflection_and_simple_function"
 
 def test_noparams_function_merge():
 
@@ -145,7 +148,7 @@ def test_noparams_function_merge():
 
     new_schema = insert_prefix(Reflection, function_schema)
     assert len(new_schema['parameters']['properties']) == 2
-    assert new_schema['name'] == 'reflection_and_function_no_params'
+    assert new_schema['name'] == 'Reflection_and_function_no_params'
 
 def test_model_init_function():
 
@@ -154,19 +157,22 @@ def test_model_init_function():
         name: str
         city: str
 
-    def the_init(name: str, city: str):
-        return User(name=name, city=city)
-    the_init.__doc__ = User.__doc__
 
-    the_init.LLMEasyTools_schema_name = 'User'
-
-    model = parameters_basemodel_from_function(the_init)
-    assert _recursive_purge_titles(model.model_json_schema()) == _recursive_purge_titles(User.model_json_schema())
-
-
-    function_schema = get_function_schema(the_init)
+    function_schema = get_function_schema(User)
     assert function_schema['name'] == 'User'
     assert function_schema['description'] == 'A user object'
     assert len(function_schema['parameters']['properties']) == 2
     assert len(function_schema['parameters']['required']) == 2
+
+
+def test_case_insensitivity():
+
+    class User(BaseModel):
+        """A user object"""
+        name: str
+        city: str
+
+    function_schema = get_function_schema(User, case_insensitive=True)
+    assert function_schema['name'] == 'user'
+    assert get_name(User, case_insensitive=True) == 'user'
 

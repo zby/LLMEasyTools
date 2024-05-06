@@ -84,7 +84,7 @@ def get_function_schema(function: Callable, case_insensitive: bool=False) -> dic
         function_schema['parameters'] = model_json_schema
     return function_schema
 
-def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = True):
+def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = False):
     if not issubclass(prefix_class, BaseModel):
         raise TypeError(
             f"The given class reference is not a subclass of pydantic BaseModel"

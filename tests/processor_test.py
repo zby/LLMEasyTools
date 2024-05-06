@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from llm_easy_tools import llm_function
 from pydantic import BaseModel, Field, ValidationError
 from typing import Any
-from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion
+from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked
@@ -17,6 +17,22 @@ def mk_tool_call(name, args):
 
 def mk_tool_call_jason(name, args):
     return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=args), type='function')
+
+def mk_chat_completion(name, args):
+    arguments = json.dumps(args)
+    return ChatCompletion(
+        id='A',
+        created=0,
+        model='gpt-3.5-turbo',
+        object='chat.completion',
+        choices=[
+            Choice(
+                finish_reason='stop',
+                index=0,
+                message=ChatCompletionMessage(role='assistant', tool_calls=[mk_tool_call(name, args)]))
+        ]
+    )
+
 
 def test_process_methods():
     class TestTool:
@@ -107,3 +123,11 @@ def test_json_fix():
     result = process_tool_call(tool_call, [UserDetail], fix_json_args=False)
     assert isinstance(result.error, json.decoder.JSONDecodeError)
 
+def test_case_insensitivity():
+    class User(BaseModel):
+        name: str
+        city: str
+
+    response = mk_chat_completion("user", {"name": "John", "city": "Metropolis"})
+    results = process_response(response, [User], case_insensitive=True)
+    assert results[0].output == User(name="John", city="Metropolis")
