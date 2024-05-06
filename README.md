@@ -72,7 +72,7 @@ User John from Warsaw was contacted
 ### Example: Getting structured data from LLM
 
 ```python
-## Define a Pydantic model for your tool's input
+## Define a Pydantic model for your tool's output
 class UserDetail(BaseModel):
     name: str
     city: str
