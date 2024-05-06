@@ -3,13 +3,6 @@ from llm_easy_tools import llm_function, get_toolset_tools, get_tool_defs, proce
 import re
 from openai import OpenAI
 
-# Define Pydantic models for the search tool's input and word query
-class SearchQuery(BaseModel):
-    term: str
-
-class WordQuery(BaseModel):
-    word: str
-
 # Define a class for document management
 class DocumentManager:
     def __init__(self):
@@ -54,20 +47,20 @@ class DocumentManager:
 
 # Create an instance of DocumentManager
 doc_manager = DocumentManager()
-
+tools = get_toolset_tools(doc_manager)
 
 client = OpenAI()
 # Example LLM call to search for a document
 response_search = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Find a document about AI"}],
-    tools=get_tool_defs(get_toolset_tools(doc_manager)),
+    tools=get_tool_defs(tools),
     tool_choice="auto"
 )
 
 # Process the response to search for the document
 
-results_search = process_response(response_search, get_toolset_tools(doc_manager))
+results_search = process_response(response_search, tools)
 print(results_search[0].output)
 
 # Example LLM call to look up a word in the current document
