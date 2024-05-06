@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
-from llm_easy_tools.schema_generator import get_name, llm_function
+from llm_easy_tools.schema_generator import get_name, llm_function, parameters_basemodel_from_function
 
 class NoMatchingTool(Exception):
     def __init__(self, message):
@@ -111,7 +111,12 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
     return result
 
 def _process_unpacked(function, tool_args={}) -> Union[str, BaseModel]:
-    return function(**tool_args)
+    model = parameters_basemodel_from_function(function)
+    model_instance = model(**tool_args)
+    args = {}
+    for field, _ in model.model_fields.items():
+        args[field] = getattr(model_instance, field)
+    return function(**args)
 
 def _extract_prefix_unpacked(tool_args, prefix_class):
     # modifies tool_args

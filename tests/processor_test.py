@@ -10,67 +10,73 @@ from openai.types.chat.chat_completion_message_tool_call   import ChatCompletion
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked
 
-class TestTool:
 
-    class SomeClass(BaseModel):
-        value: int
-
-    @llm_function()
-    def tool_method(self, arg: int) -> str:
-        return f'executed tool_method with param: {arg}'
-
-    @llm_function()
-    def additional_tool_method(self, arg: int) -> str:
-        return f'executed additional_tool_method with param: {arg}'
-
-    def _private_tool_method(self, arg: int) -> str:
-        return str(arg.value * 4)
-
-    @llm_function()
-    class User(BaseModel):
-        name: str
-        age: int
-
-    @llm_function('short_address')
-    class Address(BaseModel):
-        city: str
-        street: str
-
-    @llm_function()
-    def no_output(self, arg: int):
-        pass
-
-
-    @llm_function()
-    def failing_method(self, arg: int) -> str:
-        raise Exception('Some exception')
-
-
-tool = TestTool()
-
-
-def mk_tool_call(name, arguments):
+def mk_tool_call(name, args):
+    arguments = json.dumps(args)
     return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=arguments), type='function')
 
-def test_process():
-    tool_call = mk_tool_call("tool_method", json.dumps({"arg": 2}))
+def mk_tool_call_jason(name, args):
+    return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=args), type='function')
+
+def test_process_methods():
+    class TestTool:
+
+        def tool_method(self, arg: int) -> str:
+            return f'executed tool_method with param: {arg}'
+
+        def no_output(self, arg: int):
+            pass
+
+        def failing_method(self, arg: int) -> str:
+            raise Exception('Some exception')
+
+
+    tool = TestTool()
+
+    tool_call = mk_tool_call("tool_method", {"arg": 2})
     result = process_tool_call(tool_call, [tool.tool_method])
     assert isinstance(result, ToolResult)
     assert result.output == 'executed tool_method with param: 2'
 
-    tool_call = mk_tool_call("failing_method", json.dumps({"arg": 2}))
+    tool_call = mk_tool_call("failing_method", {"arg": 2})
     result = process_tool_call(tool_call, [tool.failing_method])
     assert isinstance(result, ToolResult)
     assert "Some exception" in str(result.error)
     message = result.to_message()
     assert "Some exception" in message['content']
 
-    tool_call = mk_tool_call("no_output", json.dumps({"arg": 2}))
+    tool_call = mk_tool_call("no_output", {"arg": 2})
     result = process_tool_call(tool_call, [tool.no_output])
     assert isinstance(result, ToolResult)
     message = result.to_message()
     assert message['content'] == ''
 
+def test_process_complex():
+
+    class Address(BaseModel):
+        street: str
+        city: str
+
+    class Company(BaseModel):
+        name: str
+        speciality: str
+        address: Address
+
+
+    def print_companies(companies: list[Company]):
+        return companies
+
+    company_list = [{
+        'address': {'city': 'Metropolis', 'street': '150 Futura Plaza'},
+        'name': 'Aether Innovations',
+        'speciality': 'sustainable energy solutions'
+    }]
+
+    tool_call = mk_tool_call("print_companies", {"companies": company_list})
+    result = process_tool_call(tool_call, [print_companies])
+    assert isinstance(result, ToolResult)
+    assert isinstance(result.output, list)
+    assert isinstance(result.output[0], Company)
 
 def test_prefixing():
 
@@ -93,7 +99,7 @@ def test_json_fix():
     json_data = json.dumps(original_user.model_dump())
     json_data = json_data[:-1]
     json_data = json_data + ',}'
-    tool_call = mk_tool_call("UserDetail", json_data)
+    tool_call = mk_tool_call_jason("UserDetail", json_data)
     result = process_tool_call(tool_call, [UserDetail])
     assert result.output == original_user
     assert len(result.soft_errors) > 0

@@ -152,10 +152,8 @@ pprint(get_tool_defs([contact_user]))
 Discover more possibilities and examples in the examples directory and test suite.
 
 ## Limitations
-Support for complex structures as function arguments is not fully featured yet.
-But if the a Pydantic model is used as a function (i.e. passed to `get_tool_defs` and `process_response`)
-it will be called with the data in the form of a dictionary and the correct Pydantic model will be created.
-See [examples/complex_extraction.py](https://github.com/zby/LLMEasyTools/tree/main/examples/complex_extraction.py) for an example.
+The function arguments must be of simple type or be pydantic models.
+Complex models are not tested yet.
 
 ## License
 
