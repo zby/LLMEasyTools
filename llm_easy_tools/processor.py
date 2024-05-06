@@ -127,7 +127,7 @@ def process_response(response: ChatCompletion, functions: List[Callable], choice
     Processes a ChatCompletion response, executing contained tool calls.
     For each tool call matches a function from the 'functions' list by name.
     The result of the tool call is returned as a ToolResult object.
-    If the tool call failed, its error message is saved in the 'error' field in the result.
+    If the tool call raises an exception, that exception is saved in the 'error' field in the result.
 
     Args:
         response (ChatCompletion): The response object containing tool calls.

@@ -59,7 +59,7 @@ response = client.chat.completions.create(
     tools=get_tool_defs([contact_user]),
     tool_choice={"type": "function", "function": {"name": "contact_user"}},
 )
-# There might be more than one tool calls and more than one result
+# There might be more than one tool calls in a single response so results are a list
 results = process_response(response, [contact_user])
 
 pprint(results[0].output)
@@ -84,7 +84,7 @@ response = client.chat.completions.create(
     tools=get_tool_defs([UserDetail]),
     tool_choice="auto",
 )
-# There might be more than one tool calls and more than one result
+# There might be more than one tool calls in a single response so results are a list
 results = process_response(response, [UserDetail])
 
 #pprint(results)
