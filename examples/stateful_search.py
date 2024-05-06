@@ -67,7 +67,7 @@ print(results_search[0].output)
 response_lookup = client.chat.completions.create(
     model="gpt-3.5-turbo-1106",
     messages=[{"role": "user", "content": "Look up the word 'evolving'"}],
-    tools=get_tool_defs(get_toolset_tools(doc_manager)),
+    tools=get_tool_defs(tools),
     tool_choice="auto",
 )
 # Process the response to look up the word
