@@ -10,7 +10,6 @@ from openai.types.chat.chat_completion_message_tool_call   import ChatCompletion
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked
 
-
 def mk_tool_call(name, args):
     arguments = json.dumps(args)
     return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=arguments), type='function')
@@ -18,8 +17,7 @@ def mk_tool_call(name, args):
 def mk_tool_call_jason(name, args):
     return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=args), type='function')
 
-def mk_chat_completion(name, args):
-    arguments = json.dumps(args)
+def mk_chat_completion(tool_calls):
     return ChatCompletion(
         id='A',
         created=0,
@@ -29,7 +27,7 @@ def mk_chat_completion(name, args):
             Choice(
                 finish_reason='stop',
                 index=0,
-                message=ChatCompletionMessage(role='assistant', tool_calls=[mk_tool_call(name, args)]))
+                message=ChatCompletionMessage(role='assistant', tool_calls=tool_calls))
         ]
     )
 
@@ -123,11 +121,19 @@ def test_json_fix():
     result = process_tool_call(tool_call, [UserDetail], fix_json_args=False)
     assert isinstance(result.error, json.decoder.JSONDecodeError)
 
+    response = mk_chat_completion([tool_call])
+    results = process_response(response, [UserDetail])
+    assert results[0].output == original_user
+    assert len(results[0].soft_errors) > 0
+
+    results = process_response(response, [UserDetail], fix_json_args=False)
+    assert isinstance(results[0].error, json.decoder.JSONDecodeError)
+
 def test_case_insensitivity():
     class User(BaseModel):
         name: str
         city: str
 
-    response = mk_chat_completion("user", {"name": "John", "city": "Metropolis"})
+    response = mk_chat_completion([mk_tool_call("user", {"name": "John", "city": "Metropolis"})])
     results = process_response(response, [User], case_insensitive=True)
     assert results[0].output == User(name="John", city="Metropolis")

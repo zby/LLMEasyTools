@@ -132,6 +132,7 @@ def process_response(
         functions: List[Callable],
         choice_num=0,
         prefix_class=None,
+        fix_json_args=True,
         case_insensitive=False
         ) -> list[ToolResult]:
     """
@@ -158,7 +159,7 @@ def process_response(
     else:
         tool_calls = []
     for tool_call in tool_calls:
-        result = process_tool_call(tool_call, functions, prefix_class, case_insensitive=case_insensitive)
+        result = process_tool_call(tool_call, functions, prefix_class, fix_json_args, case_insensitive)
         results.append(result)
     return results
 
