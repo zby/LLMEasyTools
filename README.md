@@ -1,9 +1,10 @@
 # LLMEasyTools
-**OpenAI tools and functions with no fuss.**
+**OpenAI tools and functions calls with simplicity**
 
 LLMEasyTool is a minimal Python package designed for seamless interaction with 
 [OpenAI Python API library](https://github.com/openai/openai-python) or compatible.
-It focuses on 'tools' and 'function calls', offering a minimalist approach that doesn't get in your way.
+It focuses on *agentic* workflows with the LLM choosing the *tool* appropriate for a task,
+offering a minimalist approach that doesn't get in your way.
 
 One of the key advantages of LLMEasyTools is its non-intrusive design. 
 It doesn't take over the interaction with the OpenAI client, making it easier for developers
@@ -13,13 +14,13 @@ By integrating Pydantic, LLMEasyTools ensures robust data validation and schema 
 
 ## Features
 
-- **Schema Generation**: Effortlessly create JSON schemas for tools from type annotations
-- **Structured Data from LLM**
-- **Function Name Mapping**: Flexibly map JSON schema names to Python code. Optional case insensitivity.
-- **Dispatching Function Calls**: Directly invoke functions based on LLM response structures.
-- **Stateful Tools**: You can register methods bound to an object to have stateful tools. See [examples/stateful_search.py](https://github.com/zby/LLMEasyTools/tree/main/examples)
-- **No Patching!**: No globals, some 400 lines of mostly straightforward code.
+- **Schema Generation**: Effortlessly create JSON schemas from type annotations.
+- **Structured Data from LLM**: Works with Pydantic models and basic data structures.
+- **Function Name Mapping**: Flexibly map JSON schema names to Python code. Optional case insensitivity
+- **Dispatching Function Calls**: Directly invoke functions based on LLM response.
+- **Stateful Tools**: You can pass methods bound to an object to have stateful tools. See [examples/stateful_search.py](https://github.com/zby/LLMEasyTools/tree/main/examples).
 - **Stateless api**: Schema generation and dispatching function calls are pure functions, even though tools themselves can be stateful.
+- **No Patching!**: No globals, some 400 lines of mostly straightforward code.
 
 
 ## Installation
@@ -42,7 +43,7 @@ There are two parts of the so called *LLM function calling* that are not covered
 - schema generation
 - function dispatching
 
-LLMEasyTools covers this area with two main functions:
+LLMEasyTools provides two functions to handle this:
 - `get_tool_defs` - generates a list of tool definitions (schemas) from a list of functions
 - `process_response` - processes a response from the LLM and returns a list of results
 
