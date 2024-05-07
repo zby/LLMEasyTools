@@ -38,6 +38,14 @@ pytest -v tests
 
 ## Usage
 
+There are two parts of the so called *LLM function calling* that are not covered by the standard openai library:
+- schema generation
+- function dispatching
+
+LLMEasyTools covers this area with two main functions:
+- `get_tool_defs` - generates a list of tool definitions (schemas) from a list of functions
+- `process_response` - processes a response from the LLM and returns a list of results
+
 ### Basic Example: Dispatching to a function
 
 ```python
