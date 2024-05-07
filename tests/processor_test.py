@@ -1,5 +1,6 @@
 import pytest
 import json
+from time import sleep, time
 
 from unittest.mock import Mock
 from llm_easy_tools import llm_function
@@ -137,3 +138,27 @@ def test_case_insensitivity():
     response = mk_chat_completion([mk_tool_call("user", {"name": "John", "city": "Metropolis"})])
     results = process_response(response, [User], case_insensitive=True)
     assert results[0].output == User(name="John", city="Metropolis")
+
+def test_parallel_tools():
+
+    class CounterClass:
+        def __init__(self):
+            self.counter = 0
+
+        def increment_counter(self):
+            self.counter += 1
+            sleep(1)  # Increased sleep time to 1 second
+
+    counter = CounterClass()
+    tool_call = mk_tool_call("increment_counter", {})
+    response = mk_chat_completion([tool_call] * 10)
+
+    start_time = time()
+    results = process_response(response, [counter.increment_counter], parallel=True)
+    end_time = time()
+
+    assert results[9].error is None
+
+    time_taken = end_time - start_time
+    assert counter.counter == 10
+    assert time_taken <= 2, f"Expected processing time to be less than or equal to 2 seconds, but was {time_taken}"

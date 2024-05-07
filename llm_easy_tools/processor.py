@@ -2,7 +2,7 @@ import json
 import traceback
 import inspect
 
-
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 from pprint import pprint
 from typing import Type, Optional, List, Union
@@ -133,7 +133,8 @@ def process_response(
         choice_num=0,
         prefix_class=None,
         fix_json_args=True,
-        case_insensitive=False
+        case_insensitive=False,
+        parallel=False
         ) -> list[ToolResult]:
     """
     Processes a ChatCompletion response, executing contained tool calls.
@@ -158,10 +159,25 @@ def process_response(
         tool_calls = response.choices[choice_num].message.tool_calls
     else:
         tool_calls = []
-    for tool_call in tool_calls:
-        result = process_tool_call(tool_call, functions, prefix_class, fix_json_args, case_insensitive)
-        results.append(result)
+        # Prepare the arguments for each tool call
+    args_list = [(tool_call, functions, prefix_class, fix_json_args, case_insensitive) for tool_call in tool_calls]
+
+    if parallel:
+        return process_tool_calls_parallel(args_list)
+    else:
+        return process_tool_calls(args_list)
+
+def process_tool_calls(args_list):
+    results = []
+    for args in args_list:
+        results.append(process_tool_call(*args))
     return results
+
+def process_tool_calls_parallel(args_list):
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(lambda args: process_tool_call(*args), args_list))
+    return results
+
 
 def get_toolset_tools(obj: object) -> list[Callable]:
     result = []
