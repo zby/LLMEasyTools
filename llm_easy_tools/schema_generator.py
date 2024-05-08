@@ -114,29 +114,29 @@ def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitiv
 #
 # Examples
 
-def function_with_doc():
-    """
-    This function has a docstring and no parameteres.
-    Expected Cost: high
-    """
-    pass
-
-@llm_function(schema_name="altered_name")
-def function_decorated():
-    pass
-
-class ExampleClass:
-     def simple_method(self, count: int, size: float):
-         """simple method does something"""
-         pass
-
-example_object = ExampleClass()
-
-class User(BaseModel):
-    name: str
-    age: int
-
 if __name__ == "__main__":
+    def function_with_doc():
+        """
+        This function has a docstring and no parameteres.
+        Expected Cost: high
+        """
+        pass
+
+    @llm_function(schema_name="altered_name")
+    def function_decorated():
+        pass
+
+    class ExampleClass:
+        def simple_method(self, count: int, size: float):
+            """simple method does something"""
+            pass
+
+    example_object = ExampleClass()
+
+    class User(BaseModel):
+        name: str
+        age: int
+
     pprint(get_tool_defs([
         example_object.simple_method, 
         function_with_doc, 

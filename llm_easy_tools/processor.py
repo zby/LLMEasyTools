@@ -197,46 +197,46 @@ def get_toolset_tools(obj: object) -> list[Callable]:
 #
 # Examples
 
-@llm_function(schema_name="altered_name")
-def function_decorated():
-    return 'Result of function_decorated'
-
-class ExampleClass:
-     def simple_method(self, count: int, size: float):
-         """simple method does something"""
-         return 'Result of simple_method'
-
-example_object = ExampleClass()
-
-class User(BaseModel):
-    name: str
-    email: str
-
-def mk_chat_with_tool_call(name, args):
-    message = ChatCompletionMessage(
-        role="assistant",
-        tool_calls=[
-            {
-                "id": 'A',
-                "type": 'function',
-                "function": {
-                    "arguments": json.dumps(args),
-                    "name": name
-                }
-            }
-        ]
-    )
-    chat_completion = ChatCompletion(
-        id='A',
-        created=0,
-        model='A',
-        choices=[{'finish_reason': 'stop', 'index': 0, 'message': message}],
-        object='chat.completion'
-    )
-    return chat_completion
-
 
 if __name__ == "__main__":
+
+    @llm_function(schema_name="altered_name")
+    def function_decorated():
+        return 'Result of function_decorated'
+
+    class ExampleClass:
+        def simple_method(self, count: int, size: float):
+            """simple method does something"""
+            return 'Result of simple_method'
+
+    example_object = ExampleClass()
+
+    class User(BaseModel):
+        name: str
+        email: str
+
+    def mk_chat_with_tool_call(name, args):
+        message = ChatCompletionMessage(
+            role="assistant",
+            tool_calls=[
+                {
+                    "id": 'A',
+                    "type": 'function',
+                    "function": {
+                        "arguments": json.dumps(args),
+                        "name": name
+                    }
+                }
+            ]
+        )
+        chat_completion = ChatCompletion(
+            id='A',
+            created=0,
+            model='A',
+            choices=[{'finish_reason': 'stop', 'index': 0, 'message': message}],
+            object='chat.completion'
+        )
+        return chat_completion
 
 
     call_to_altered_name = mk_chat_with_tool_call('altered_name', {}).choices[0].message.tool_calls[0]

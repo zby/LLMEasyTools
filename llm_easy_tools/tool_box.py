@@ -74,19 +74,19 @@ class ToolBox:
 #
 # Examples
 
-@llm_function(schema_name="altered_name")
-def function_decorated():
-    return 'Result of function_decorated'
-
-class ExampleClass:
-     def simple_method(self, count: int, size: float):
-         """simple method does something"""
-         return 'Result of simple_method'
-
-example_object = ExampleClass()
-
 
 if __name__ == "__main__":
+    @llm_function(schema_name="altered_name")
+    def function_decorated():
+        return 'Result of function_decorated'
+
+    class ExampleClass:
+        def simple_method(self, count: int, size: float):
+            """simple method does something"""
+            return 'Result of simple_method'
+
+    example_object = ExampleClass()
+
     toolbox = ToolBox()
     toolbox.register_function(function_decorated)
     toolbox.register_function(example_object.simple_method)
