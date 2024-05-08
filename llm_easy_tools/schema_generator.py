@@ -63,7 +63,7 @@ def _recursive_purge_titles(d: Dict[str, Any]) -> None:
             else:
                 _recursive_purge_titles(d[key])
 
-def get_name(func: Callable, case_insensitive: bool) -> str:
+def get_name(func: Callable, case_insensitive: bool = False) -> str:
     schema_name = func.__name__
     if hasattr(func, 'LLMEasyTools_schema_name'):
         schema_name = func.LLMEasyTools_schema_name
