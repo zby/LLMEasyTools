@@ -15,12 +15,13 @@ By integrating Pydantic, LLMEasyTools ensures robust data validation and schema 
 ## Features
 
 - **Schema Generation**: Effortlessly create JSON schemas from type annotations.
-- **Structured Data from LLM**: Works with Pydantic models and basic data structures.
-- **Function Name Mapping**: Flexibly map JSON schema names to Python code. Optional case insensitivity
-- **Dispatching Function Calls**: Directly invoke functions based on LLM response.
-- **Stateful Tools**: You can pass methods bound to an object to have stateful tools. See [examples/stateful_search.py](https://github.com/zby/LLMEasyTools/tree/main/examples).
-- **Stateless api**: Schema generation and dispatching function calls are pure functions, even though tools themselves can be stateful.
-- **No Patching!**: No globals, some 400 lines of mostly straightforward code.
+- Structured Data from LLM: Works with Pydantic models and basic data structures.
+- Function Name Mapping: Flexibly map JSON schema names to Python code. Optional case insensitivity
+- Dispatching Function Calls: Directly invoke functions based on LLM response.
+- Stateful Tools: You can pass methods bound to an object to have stateful tools. See [examples/stateful_search.py](https://github.com/zby/LLMEasyTools/tree/main/examples).
+- Stateless api: Schema generation and dispatching function calls are pure functions, even though tools themselves can be stateful.
+- No Patching!: No globals, some 400 lines of mostly straightforward code.
+- Parallel tool execution: tool calls from one response are executed in parallel.
 
 
 ## Installation

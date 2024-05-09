@@ -154,7 +154,7 @@ def test_parallel_tools():
     response = mk_chat_completion([tool_call] * 10)
 
     start_time = time()
-    results = process_response(response, [counter.increment_counter], parallel=True)
+    results = process_response(response, [counter.increment_counter])
     end_time = time()
 
     assert results[9].error is None
