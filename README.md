@@ -162,8 +162,22 @@ pprint(get_tool_defs([contact_user]))
 Discover more possibilities and examples in the examples directory and test suite.
 
 ## Limitations
-The function arguments must be of simple type or be pydantic models.
-Complex models are not tested yet.
+We internally construct a Pydantic model from the function arguments to generate the schema
+and then we use that same model to create the function parameters from the LLM response.
+```
+class FunctionParams(BaseModel):
+    param1: str
+    param2: list[str]
+    param3: SomeOtherModel(name: str)
+
+params_dictionary = FunctionParams(param1="value1", param2=["value2", "value3"], param3=SomeOtherModel(name="value4")).model_dump()
+
+FunctionParams(**params_dictionary)
+```
+The LLM is supposed to return a json encoded dictionary like the `params_dictionary` above and then
+we use the `FunctionParams(**params_dictionary)` to get the parameters.
+
+This might fail for complex models.
 
 ## License
 

@@ -46,12 +46,14 @@ class ToolResult:
     def to_message(self) -> dict[str, str]:
         if self.error is not None:
             content = f"{self.error}"
+        elif self.output is None:
+            content = ''
+        elif isinstance(self.output, str):
+            content = self.output
         elif isinstance(self.output, BaseModel):
             content = f"{self.name} created"
-        elif self.output is not None:
-            content = self.output
         else:
-            content = ''
+            content = self.output.to_content()
         return {
             "role": "tool",
             "tool_call_id": self.tool_call_id,

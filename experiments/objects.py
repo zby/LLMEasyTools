@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import date
 import json  # Import json module
 from pprint import pprint
-from llm_easy_tools.schema_generator import get_tool_defs
+from llm_easy_tools.schema_generator import get_tool_defs, parameters_basemodel_from_function
 from llm_easy_tools.processor import process_response
 from openai import OpenAI
 
@@ -23,7 +23,12 @@ def print_users(users: list[User]):
     pprint(users)
     return users
 
-#pprint(get_tool_defs([print_companies]))
+#pprint(get_tool_defs([print_users]))
+#params_model = parameters_basemodel_from_function(print_users)
+#params_object = params_model(users=[User(name="John Doe", birth_date=date(1990, 5, 15))])
+#pprint(params_object.model_dump())
+#print(date(1990, 5, 15))
+#exit()
 
 story = "John Doe was born on 15th May 1990, Mary was his daughter born on 16th May 1991"
 
