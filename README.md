@@ -176,6 +176,25 @@ def apply_function(func):
 
 pprint(get_tool_defs([apply_function]))
 ```
+Another example of unacceptable function signature is a function that takes a socket as an argument.
+This produces an error too:
+```
+def send_message(sock: socket.socket, message: str):
+    """
+    Sends a message through a socket connection.
+    """
+    # Ensure the socket is connected
+    if sock:
+        try:
+            # Send the message
+            sock.sendall(message.encode('utf-8'))
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    else:
+        print("Socket is not connected.")
+
+pprint(get_tool_defs([send_message]))
+```
 
 ## License
 

@@ -1,3 +1,5 @@
+import socket
+
 from pydantic import BaseModel
 from datetime import date
 import json  # Import json module
@@ -46,6 +48,24 @@ response = client.chat.completions.create(
 
 process_response(response, [print_users])
 
+#def send_message(sock: socket.socket, message: str):
+#    """
+#    Sends a message through a socket connection.
+#    """
+#    # Ensure the socket is connected
+#    if sock:
+#        try:
+#            # Send the message
+#            sock.sendall(message.encode('utf-8'))
+#        except Exception as e:
+#            print(f"An error occurred: {e}")
+#    else:
+#        print("Socket is not connected.")
+#
+#pprint(get_tool_defs([send_message]))
+#
+#
+#
 #def apply_function(func):
 #    def wrapper(*args, **kwargs):
 #        return func(*args, **kwargs)
