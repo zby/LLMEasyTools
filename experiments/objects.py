@@ -46,3 +46,10 @@ response = client.chat.completions.create(
 
 process_response(response, [print_users])
 
+#def apply_function(func):
+#    def wrapper(*args, **kwargs):
+#        return func(*args, **kwargs)
+#    return wrapper
+#
+#pprint(get_tool_defs([apply_function]))
+

@@ -164,20 +164,18 @@ Discover more possibilities and examples in the examples directory and test suit
 ## Limitations
 We internally construct a Pydantic model from the function arguments to generate the schema
 and then we use that same model to create the function parameters from the LLM response.
+So the functions arguments must have types that can be used in fields in pydantic objects.
+
+For example you cannot get tool definitions for functions that as argument take another function.
+This results in an error:
 ```
-class FunctionParams(BaseModel):
-    param1: str
-    param2: list[str]
-    param3: SomeOtherModel(name: str)
+def apply_function(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
 
-params_dictionary = FunctionParams(param1="value1", param2=["value2", "value3"], param3=SomeOtherModel(name="value4")).model_dump()
-
-FunctionParams(**params_dictionary)
+pprint(get_tool_defs([apply_function]))
 ```
-The LLM is supposed to return a json encoded dictionary like the `params_dictionary` above and then
-we use the `FunctionParams(**params_dictionary)` to get the parameters.
-
-This might fail for complex models.
 
 ## License
 
