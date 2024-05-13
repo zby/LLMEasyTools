@@ -1,15 +1,15 @@
 import json
-import traceback
 import inspect
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Callable
 from pprint import pprint
-from typing import Type, Optional, List, Union
+from typing import Optional, List, Union
 from pydantic import BaseModel, ValidationError
 from dataclasses import dataclass, field
 
-from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
 from llm_easy_tools.schema_generator import get_name, llm_function, parameters_basemodel_from_function
@@ -153,15 +153,16 @@ def process_response(
         list[ToolResult]: A list of ToolResult objects, each representing the outcome of a processed tool call.
     """
     results = []
-    if hasattr(response.choices[choice_num].message, 'function_call') and response.choices[choice_num].message.function_call:
+    if hasattr(response.choices[choice_num].message, 'function_call') and (function_call:=response.choices[choice_num].message.function_call):
         # this is obsolete in openai - but maybe it is used by other llms?
-        function_call = response.choices[choice_num].message.function_call
         tool_calls = [ChatCompletionMessageToolCall(id='A', function=Function(name=function_call.name, arguments=function_call.arguments), type='function')]
     elif hasattr(response.choices[choice_num].message, 'tool_calls') and response.choices[choice_num].message.tool_calls:
         tool_calls = response.choices[choice_num].message.tool_calls
     else:
         tool_calls = []
         # Prepare the arguments for each tool call
+    if not tool_calls:
+        return []
     args_list = [(tool_call, functions, prefix_class, fix_json_args, case_insensitive) for tool_call in tool_calls]
 
     if executor:
@@ -173,7 +174,7 @@ def process_response(
 def get_toolset_tools(obj: object) -> list[Callable]:
     result = []
     methods = inspect.getmembers(obj, predicate=inspect.ismethod)
-    for name, method in methods:
+    for _, method in methods:
         if hasattr(method, 'LLMEasyTools_external_function'):
             result.append(method)
     for attr_name in dir(obj.__class__):
