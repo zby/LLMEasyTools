@@ -1,7 +1,7 @@
 import json
 import inspect
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Callable
 from pprint import pprint
 from typing import Optional, List, Union
@@ -136,6 +136,7 @@ def process_response(
         prefix_class=None,
         fix_json_args=True,
         case_insensitive=False,
+        executor: ThreadPoolExecutor|ProcessPoolExecutor|None=None,
         ) -> list[ToolResult]:
     """
     Processes a ChatCompletion response, executing contained tool calls.
@@ -164,8 +165,10 @@ def process_response(
         return []
     args_list = [(tool_call, functions, prefix_class, fix_json_args, case_insensitive) for tool_call in tool_calls]
 
-    with ThreadPoolExecutor() as executor:
+    if executor:
         results = list(executor.map(lambda args: process_tool_call(*args), args_list))
+    else:
+        results = list(map(lambda args: process_tool_call(*args), args_list)) 
     return results
 
 def get_toolset_tools(obj: object) -> list[Callable]:
@@ -228,6 +231,7 @@ if __name__ == "__main__":
         return chat_completion
 
 
+    pprint(process_response(mk_chat_with_tool_call('altered_name', {}), [function_decorated]))
     call_to_altered_name = mk_chat_with_tool_call('altered_name', {}).choices[0].message.tool_calls[0]
     pprint(call_to_altered_name)
     pprint(process_tool_call(call_to_altered_name, [function_decorated]))
