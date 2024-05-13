@@ -42,6 +42,7 @@ class ToolResult:
     error: Optional[Exception] = None
     soft_errors: List[Exception] = field(default_factory=list)
     prefix: Optional[BaseModel] = None
+    tool: Optional[Callable|BaseModel] = None
 
     def to_message(self) -> dict[str, str]:
         if self.error is not None:
@@ -91,16 +92,18 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
             soft_errors.append(NoMatchingTool(f"Trying to decode function call with a name '{tool_name}' not matching prefix '{prefix_name}'"))
         else:
             tool_name = tool_name[len(prefix_name + '_and_'):]
-    function_found = False
+
+    tool = None
+
     for f in functions_or_models:
         if get_name(f, case_insensitive=case_insensitive) == tool_name:
-            function_found = True
+            tool = f
             try:
                 output = _process_unpacked(f, tool_args)
             except Exception as e:
                 error = e
             break
-    if not function_found:
+    else:
         error = NoMatchingTool(f"Function {tool_name} not found")
     result = ToolResult(
         tool_call_id=tool_call.id, 
@@ -108,7 +111,8 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
         output=output, 
         error=error,
         soft_errors=soft_errors,
-        prefix=prefix
+        prefix=prefix,
+        tool=tool,
     )
     return result
 
