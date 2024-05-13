@@ -3,13 +3,14 @@ import json
 from time import sleep, time
 
 from unittest.mock import Mock
-from llm_easy_tools import llm_function
 from pydantic import BaseModel, Field, ValidationError
 from typing import Any
 from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked
+from llm_easy_tools import llm_function
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 def mk_tool_call(name, args):
     arguments = json.dumps(args)
@@ -153,8 +154,9 @@ def test_parallel_tools():
     tool_call = mk_tool_call("increment_counter", {})
     response = mk_chat_completion([tool_call] * 10)
 
+    executor = ThreadPoolExecutor()
     start_time = time()
-    results = process_response(response, [counter.increment_counter])
+    results = process_response(response, [counter.increment_counter], executor=executor)
     end_time = time()
 
     assert results[9].error is None
