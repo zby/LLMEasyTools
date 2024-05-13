@@ -49,12 +49,10 @@ class ToolResult:
             content = f"{self.error}"
         elif self.output is None:
             content = ''
-        elif isinstance(self.output, str):
-            content = self.output
         elif isinstance(self.output, BaseModel):
             content = f"{self.name} created"
         else:
-            content = self.output.to_content()
+            content = str(self.output)
         return {
             "role": "tool",
             "tool_call_id": self.tool_call_id,
