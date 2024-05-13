@@ -1,5 +1,6 @@
 import inspect
-from typing import Annotated, Callable, Dict, Any, get_origin, Type, Union
+from typing import Annotated, Callable, Dict, Any, get_origin, Type
+from openai.types.chat import ChatCompletionToolParam
 
 import copy
 import pydantic as pd
@@ -28,9 +29,9 @@ def tool_def(function_schema: dict) -> dict:
 def get_tool_defs(
         functions: list[Callable],
         case_insensitive: bool = False,
-        prefix_class: Type[BaseModel] = None,
+        prefix_class: Type[BaseModel]|None = None,
         prefix_schema_name: bool = True
-        ) -> list[dict]:
+        ) -> list[ChatCompletionToolParam]:
     result = []
     for function in functions:
         fun_schema = get_function_schema(function, case_insensitive)
@@ -73,7 +74,7 @@ def get_name(func: Callable, case_insensitive: bool = False) -> str:
 
 
 def get_function_schema(function: Callable, case_insensitive: bool=False) -> dict:
-    function_schema = {
+    function_schema: dict[str, Any] = {
         'name': get_name(function, case_insensitive),
         'description': (function.__doc__ or '').strip(),
     }
