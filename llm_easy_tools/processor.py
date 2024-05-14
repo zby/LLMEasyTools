@@ -4,7 +4,7 @@ import inspect
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Callable
 from pprint import pprint
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Any
 from pydantic import BaseModel, ValidationError
 from dataclasses import dataclass, field
 
@@ -38,7 +38,7 @@ class ToolResult:
     """
     tool_call_id: str
     name: str
-    output: Optional[Union[str, BaseModel]] = None
+    output: Optional[Any] = None
     error: Optional[Exception] = None
     soft_errors: List[Exception] = field(default_factory=list)
     prefix: Optional[BaseModel] = None
@@ -64,7 +64,7 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
     function_call = tool_call.function
     tool_name = function_call.name
     args = function_call.arguments
-    soft_errors = []
+    soft_errors: list[Exception] = []
     error = None
     prefix = None
     output = None
@@ -174,7 +174,7 @@ def process_response(
     return results
 
 def get_toolset_tools(obj: object) -> list[Callable]:
-    result = []
+    result: list[Callable] = []
     methods = inspect.getmembers(obj, predicate=inspect.ismethod)
     for _, method in methods:
         if hasattr(method, 'LLMEasyTools_external_function'):
