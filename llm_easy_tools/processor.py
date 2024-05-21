@@ -1,5 +1,6 @@
 import json
 import inspect
+import traceback
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Callable
@@ -39,7 +40,9 @@ class ToolResult:
     tool_call_id: str
     name: str
     output: Optional[Any] = None
+    arguments: Optional[dict[str, Any]] = None
     error: Optional[Exception] = None
+    stack_trace: Optional[str] = None
     soft_errors: List[Exception] = field(default_factory=list)
     prefix: Optional[BaseModel] = None
     tool: Optional[Callable|BaseModel] = None
@@ -66,6 +69,7 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
     args = function_call.arguments
     soft_errors: list[Exception] = []
     error = None
+    stack_trace = None
     prefix = None
     output = None
     try:
@@ -76,7 +80,8 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
             args = args.replace(', }', '}').replace(',}', '}')
             tool_args = json.loads(args)
         else:
-            return ToolResult(tool_call_id=tool_call.id, name=tool_name, error=e)
+            stack_trace = traceback.format_exc()
+            return ToolResult(tool_call_id=tool_call.id, name=tool_name, error=e, stack_trace=stack_trace)
 
     if prefix_class is not None:
         try:
@@ -100,14 +105,17 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
                 output = _process_unpacked(f, tool_args)
             except Exception as e:
                 error = e
+                stack_trace = traceback.format_exc()
             break
     else:
         error = NoMatchingTool(f"Function {tool_name} not found")
     result = ToolResult(
         tool_call_id=tool_call.id, 
-        name=tool_name, 
+        name=tool_name,
+        arguments=tool_args,
         output=output, 
         error=error,
+        stack_trace=stack_trace,
         soft_errors=soft_errors,
         prefix=prefix,
         tool=tool,
