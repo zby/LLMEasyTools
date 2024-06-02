@@ -166,7 +166,7 @@ Discover more possibilities and examples in the examples directory and test suit
 ## Limitations
 We internally construct a Pydantic model from the function arguments to generate the schema
 and then we use that same model to create the function parameters from the LLM response.
-So the functions arguments must have types that can be used in fields in pydantic objects.
+So the functions arguments must have [types that can be used in fields in pydantic objects](https://docs.pydantic.dev/latest/concepts/types/#pydantic-types).
 
 For example you cannot get tool definitions for functions that as argument take another function.
 This results in an error:
