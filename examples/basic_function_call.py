@@ -8,6 +8,8 @@ client = OpenAI()
 def contact_user(name: str, city: str) -> str:
     return f"User {name} from {city} was contacted"
 
+# type annotations are crucial here
+
 tool_schemas = get_tool_defs([contact_user])
 
 text = "John lives in Warsaw. Bob lives in London."

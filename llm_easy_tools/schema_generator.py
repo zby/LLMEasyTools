@@ -46,6 +46,8 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
     for name, parameter in parameters.items():
         description = None
         type_ = parameter.annotation
+        if type_ is inspect._empty:
+            raise ValueError(f"Parameter '{name}' has no type annotation")
         if get_origin(parameter.annotation) is Annotated:
             if parameter.annotation.__metadata__:
                 description = parameter.annotation.__metadata__[0]

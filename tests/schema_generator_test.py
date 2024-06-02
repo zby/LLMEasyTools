@@ -176,3 +176,10 @@ def test_case_insensitivity():
     assert function_schema['name'] == 'user'
     assert get_name(User, case_insensitive=True) == 'user'
 
+def test_function_no_type_annotation():
+    def function_with_missing_type(param):
+        return f"Value is {param}"
+
+    with pytest.raises(ValueError) as exc_info:
+        get_function_schema(function_with_missing_type)
+    assert str(exc_info.value) == "Parameter 'param' has no type annotation"
