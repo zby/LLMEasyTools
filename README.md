@@ -48,6 +48,8 @@ LLMEasyTools provides two functions to handle this:
 - `get_tool_defs` - generates a list of tool definitions (schemas) from a list of functions
 - `process_response` - processes a response from the LLM and returns a list of results
 
+**Type annotations are required for all function parameters**
+
 ### Basic Example: Dispatching to a function
 
 ```python
