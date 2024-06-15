@@ -76,9 +76,14 @@ def get_name(func: Callable, case_insensitive: bool = False) -> str:
 
 
 def get_function_schema(function: Callable, case_insensitive: bool=False) -> dict:
+    description = ''
+    if hasattr(function, 'LLMEasyTools_description'):
+        description = function.LLMEasyTools_description
+    elif hasattr(function, '__doc__') and function.__doc__:
+        description = function.__doc__
     function_schema: dict[str, Any] = {
         'name': get_name(function, case_insensitive),
-        'description': (function.__doc__ or '').strip(),
+        'description': description.strip(),
     }
     model = parameters_basemodel_from_function(function)
     if model.model_fields:
