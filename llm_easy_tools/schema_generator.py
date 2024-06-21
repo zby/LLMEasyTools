@@ -86,10 +86,9 @@ def get_function_schema(function: Callable, case_insensitive: bool=False) -> dic
         'description': description.strip(),
     }
     model = parameters_basemodel_from_function(function)
-    if model.model_fields:
-        model_json_schema = model.model_json_schema()
-        _recursive_purge_titles(model_json_schema)
-        function_schema['parameters'] = model_json_schema
+    model_json_schema = model.model_json_schema()
+    _recursive_purge_titles(model_json_schema)
+    function_schema['parameters'] = model_json_schema
     return function_schema
 
 def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = False):
@@ -102,7 +101,8 @@ def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitiv
     prefix_schema.pop('description', '')
 
     if 'parameters' in schema:
-        prefix_schema['required'].extend(schema['parameters']['required'])
+        required = schema['parameters'].get('required', [])
+        prefix_schema['required'].extend(required)
         for key, value in schema['parameters']['properties'].items():
             prefix_schema['properties'][key] = value
     new_schema = copy.copy(schema)  # Create a shallow copy of the schema

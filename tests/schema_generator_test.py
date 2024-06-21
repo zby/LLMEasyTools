@@ -51,13 +51,13 @@ def test_noparams():
     result = get_function_schema(function_with_no_params)
     assert result['name'] == 'function_with_no_params'
     assert result['description'] == "This function has a docstring and takes no parameters."
-    assert 'parameters' not in result # "Omitting parameters defines a function with an empty parameter list."
+    assert result['parameters']['properties'] == {}
 
     # Function without docstring and EmptyModel as parameter
     result = get_function_schema(function_no_doc)
     assert result['name'] == 'function_no_doc'
     assert result['description'] == ''
-    assert 'parameters' not in result
+    assert result['parameters']['properties'] == {}
 
 
 def test_nested():
@@ -144,7 +144,8 @@ def test_noparams_function_merge():
     # Function without docstring and EmptyModelWithDoc as parameter
     function_schema = get_function_schema(function_no_params)
     assert function_schema['name'] == 'function_no_params'
-    assert 'parameters' not in function_schema
+    assert function_schema['parameters']['properties'] == {}
+    pprint(function_schema)
 
     new_schema = insert_prefix(Reflection, function_schema)
     assert len(new_schema['parameters']['properties']) == 2
