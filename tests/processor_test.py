@@ -131,6 +131,18 @@ def test_json_fix():
     results = process_response(response, [UserDetail], fix_json_args=False)
     assert isinstance(results[0].error, json.decoder.JSONDecodeError)
 
+def test_list_in_string_fix():
+    class User(BaseModel):
+        names: list[str]
+
+    tool_call = mk_tool_call("User", {"names": "John, Doe"})
+    result = process_tool_call(tool_call, [User])
+    assert result.output.names == ["John", "Doe"]
+    assert len(result.soft_errors) > 0
+
+    result = process_tool_call(tool_call, [User], fix_json_args=False)
+    assert isinstance(result.error, ValidationError)
+
 def test_case_insensitivity():
     class User(BaseModel):
         name: str

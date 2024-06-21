@@ -5,7 +5,8 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Callable
 from pprint import pprint
-from typing import Optional, List, Union, Any
+from typing import Optional, List, Union, Any, get_origin, get_args
+
 from pydantic import BaseModel, ValidationError
 from dataclasses import dataclass, field
 
@@ -102,7 +103,8 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
         if get_name(f, case_insensitive=case_insensitive) == tool_name:
             tool = f
             try:
-                output = _process_unpacked(f, tool_args)
+                output, new_soft_errors = _process_unpacked(f, tool_args, fix_json_args=fix_json_args)
+                soft_errors.extend(new_soft_errors)
             except Exception as e:
                 error = e
                 stack_trace = traceback.format_exc()
@@ -122,13 +124,27 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
     )
     return result
 
-def _process_unpacked(function, tool_args={}) -> Union[str, BaseModel]:
+def split_string_to_list(s: str) -> list[str]:
+    return [item.strip() for item in s.split(',')]
+
+def _process_unpacked(function, tool_args={}, fix_json_args=True):
     model = parameters_basemodel_from_function(function)
+    soft_errors = []
+    if fix_json_args:
+        for field, field_info in model.model_fields.items():
+            field_annotation = field_info.annotation
+            origin = get_origin(field_annotation)
+            if origin is list:
+                if field in tool_args and isinstance(tool_args[field], str):
+                    # this happens in Claude from Anthropic 
+                    tool_args[field] = split_string_to_list(tool_args[field])
+                    soft_errors.append(f"Fixed JSON decode error for field {field}")
+
     model_instance = model(**tool_args)
     args = {}
     for field, _ in model.model_fields.items():
         args[field] = getattr(model_instance, field)
-    return function(**args)
+    return function(**args), soft_errors
 
 def _extract_prefix_unpacked(tool_args, prefix_class):
     # modifies tool_args
