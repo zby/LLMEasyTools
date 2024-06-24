@@ -6,6 +6,7 @@ import copy
 import pydantic as pd
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
+from fastcore.docments import docments
 
 from pprint import pprint
 
@@ -41,6 +42,7 @@ def get_tool_defs(
     return result
 
 def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]:
+    docments_ = docments(function)
     fields = {}
     parameters = inspect.signature(function).parameters
     for name, parameter in parameters.items():
@@ -52,6 +54,7 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
             if parameter.annotation.__metadata__:
                 description = parameter.annotation.__metadata__[0]
             type_ = parameter.annotation.__args__[0]
+        description = description or docments_.get(name)
         default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
         fields[name] = (type_, pd.Field(default, description=description))
     return pd.create_model(f'{function.__name__}_ParameterModel', **fields)

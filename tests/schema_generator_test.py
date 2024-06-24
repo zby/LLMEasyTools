@@ -22,6 +22,28 @@ def simple_function_no_docstring(
     pass
 
 
+def simple_function_with_docment(
+        fruit: Annotated[str, 'The name of the fruit'],
+        count: int,  # The number of fruits
+):
+    """ A simple function  """
+    pass
+    
+
+
+def test_function_schema_docment():
+    schema = get_function_schema(simple_function_with_docment)
+    assert schema['name'] == simple_function_with_docment.__name__
+    assert schema['description'] == 'A simple function'
+    params = schema['parameters']
+    assert len(params['properties']) == 2
+
+    assert params['properties']['fruit']['type'] == 'string'
+    assert params['properties']['count']['type'] == 'integer'
+
+    assert params['properties']['fruit']['description'] == 'The name of the fruit'
+    assert params['properties']['count']['description'] == 'The number of fruits'
+
 
 
 def test_function_schema():
