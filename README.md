@@ -197,6 +197,9 @@ def send_message(sock: socket.socket, message: str):
 
 pprint(get_tool_defs([send_message]))
 ```
+## Misc
+This library uses the same trick with dynamic Pydantic models that is used in https://fastai.github.io/lm-hackers/lm-hackers.html
+As far as I know it was independenty discovered by my collaborator.
 
 ## License
 
