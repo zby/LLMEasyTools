@@ -3,7 +3,7 @@ import pytest
 from typing import List, Optional, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator
 
-from llm_easy_tools import get_function_schema, insert_prefix, llm_function 
+from llm_easy_tools import get_function_schema, insert_prefix, LLMFunction
 
 from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles, get_name
 
@@ -103,12 +103,12 @@ def test_methods():
     assert len(params_schema['properties']) == 2
 
 def test_name_change():
-    @llm_function('changed_name')
     def new_simple_function(count: int, size: Optional[float] = None):
         """simple function does something"""
         pass
 
-    function_schema = get_function_schema(new_simple_function)
+    func = LLMFunction(new_simple_function, schema_name='changed_name')
+    function_schema = func.schema
     assert function_schema['name'] == 'changed_name'
 
 

@@ -10,13 +10,28 @@ from pydantic_core import PydanticUndefined
 from pprint import pprint
 
 
-def llm_function(schema_name=None):
-    def decorator(func):
-        setattr(func, 'LLMEasyTools_external_function', True)
-        if schema_name is not None:
-            setattr(func, 'LLMEasyTools_schema_name', schema_name)
-        return func
-    return decorator
+class LLMFunction:
+    def __init__(self, func, schema=None, schema_name=None, description=None):
+        self.func = func
+        self.__name__ = func.__name__
+        self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
+
+        if schema:
+            self.schema = schema
+            if schema_name or description:
+                raise ValueError("Cannot specify schema_name or description when providing a complete schema")
+        else:
+            self.schema = get_function_schema(func)
+
+            if schema_name:
+                self.schema['name'] = schema_name
+
+            if description:
+                self.schema['description'] = description
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
 
 
 
@@ -27,14 +42,18 @@ def tool_def(function_schema: dict) -> dict:
     }
 
 def get_tool_defs(
-        functions: list[Callable],
+        functions: list[Callable | LLMFunction],
         case_insensitive: bool = False,
         prefix_class: Type[BaseModel]|None = None,
         prefix_schema_name: bool = True
         ) -> list[ChatCompletionToolParam]:
     result = []
     for function in functions:
-        fun_schema = get_function_schema(function, case_insensitive)
+        if isinstance(function, LLMFunction):
+            fun_schema = function.schema
+        else:
+            fun_schema = get_function_schema(function, case_insensitive)
+
         if prefix_class:
             fun_schema = insert_prefix(prefix_class, fun_schema, prefix_schema_name, case_insensitive)
         result.append(tool_def(fun_schema))
@@ -66,23 +85,27 @@ def _recursive_purge_titles(d: Dict[str, Any]) -> None:
             else:
                 _recursive_purge_titles(d[key])
 
-def get_name(func: Callable, case_insensitive: bool = False) -> str:
-    schema_name = func.__name__
-    if hasattr(func, 'LLMEasyTools_schema_name'):
-        schema_name = func.LLMEasyTools_schema_name
+def get_name(func: Callable | LLMFunction, case_insensitive: bool = False) -> str:
+    if isinstance(func, LLMFunction):
+        schema_name = func.schema['name']
+    else:
+        schema_name = func.__name__
+
     if case_insensitive:
         schema_name = schema_name.lower()
     return schema_name
 
-
 def get_function_schema(function: Callable, case_insensitive: bool=False) -> dict:
     description = ''
-    if hasattr(function, 'LLMEasyTools_description'):
-        description = function.LLMEasyTools_description
-    elif hasattr(function, '__doc__') and function.__doc__:
+    if hasattr(function, '__doc__') and function.__doc__:
         description = function.__doc__
+
+    schema_name = function.__name__
+    if case_insensitive:
+        schema_name = schema_name.lower()
+
     function_schema: dict[str, Any] = {
-        'name': get_name(function, case_insensitive),
+        'name': schema_name,
         'description': description.strip(),
     }
     model = parameters_basemodel_from_function(function)

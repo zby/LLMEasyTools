@@ -9,7 +9,7 @@ from openai.types.chat.chat_completion import ChatCompletionMessage, ChatComplet
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked
-from llm_easy_tools import llm_function
+from llm_easy_tools import LLMFunction
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 def mk_tool_call(name, args):

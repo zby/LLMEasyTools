@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from llm_easy_tools import llm_function, get_toolset_tools, get_tool_defs, process_response
+from llm_easy_tools import get_tool_defs, process_response
 import re
 from openai import OpenAI
 
@@ -13,7 +12,6 @@ class DocumentManager:
         ]
         self.current_document = None
 
-    @llm_function()
     def search_document(self, term: str):
         closest_match = None
         min_distance = float('inf')
@@ -30,7 +28,6 @@ class DocumentManager:
         else:
             return "No matching document found."
 
-    @llm_function()
     def lookup_word(self, word: str):
         if not self.current_document:
             return "No document is currently selected."
@@ -47,7 +44,7 @@ class DocumentManager:
 
 # Create an instance of DocumentManager
 doc_manager = DocumentManager()
-tools = get_toolset_tools(doc_manager)
+tools = [doc_manager.search_document, doc_manager.lookup_word]
 
 client = OpenAI()
 # Example LLM call to search for a document
@@ -71,7 +68,7 @@ response_lookup = client.chat.completions.create(
     tool_choice="auto",
 )
 # Process the response to look up the word
-results_lookup = process_response(response_lookup, get_toolset_tools(doc_manager))
+results_lookup = process_response(response_lookup, tools)
 print(results_lookup[0].output)
 
 

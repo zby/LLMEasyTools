@@ -14,7 +14,7 @@ from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
-from llm_easy_tools.schema_generator import get_name, llm_function, parameters_basemodel_from_function
+from llm_easy_tools.schema_generator import get_name, parameters_basemodel_from_function, LLMFunction
 
 class NoMatchingTool(Exception):
     def __init__(self, message):
@@ -128,6 +128,8 @@ def split_string_to_list(s: str) -> list[str]:
     return [item.strip() for item in s.split(',')]
 
 def _process_unpacked(function, tool_args={}, fix_json_args=True):
+    if isinstance(function, LLMFunction):
+        function = function.func
     model = parameters_basemodel_from_function(function)
     soft_errors = []
     if fix_json_args:
@@ -157,7 +159,7 @@ def _extract_prefix_unpacked(tool_args, prefix_class):
 
 def process_response(
         response: ChatCompletion,
-        functions: List[Callable],
+        functions: list[Callable | LLMFunction],
         choice_num=0,
         prefix_class=None,
         fix_json_args=True,
@@ -197,19 +199,6 @@ def process_response(
         results = list(map(lambda args: process_tool_call(*args), args_list)) 
     return results
 
-def get_toolset_tools(obj: object) -> list[Callable]:
-    result: list[Callable] = []
-    methods = inspect.getmembers(obj, predicate=inspect.ismethod)
-    for _, method in methods:
-        if hasattr(method, 'LLMEasyTools_external_function'):
-            result.append(method)
-    for attr_name in dir(obj.__class__):
-        attr_value = getattr(obj.__class__, attr_name)
-        if isinstance(attr_value, type) and hasattr(attr_value, 'LLMEasyTools_external_function'):
-            result.append(attr_value)
-    return result
-
-
 
 #######################################
 #
@@ -218,9 +207,10 @@ def get_toolset_tools(obj: object) -> list[Callable]:
 
 if __name__ == "__main__":
 
-    @llm_function(schema_name="altered_name")
-    def function_decorated():
+    def original_function():
         return 'Result of function_decorated'
+
+    function_decorated = LLMFunction(original_function, schema_name="altered_name")
 
     class ExampleClass:
         def simple_method(self, count: int, size: float):
