@@ -89,8 +89,9 @@ class MarkdownSearchEngine:
 # Example usage
 if __name__ == "__main__":
     # Directories
-    index_dir = "indexdir"
-    docs_dir = "docs"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    index_dir = os.path.join(current_dir, "indexdir")
+    docs_dir = os.path.join(current_dir, "docs")
 
     # Initialize the search engine
     search_engine = MarkdownSearchEngine(index_dir, docs_dir)
@@ -98,15 +99,10 @@ if __name__ == "__main__":
     # Search for keywords
     query = "oxygen"
     results = search_engine.search(query)
-
-    # Display results
-    if results:
-        print("Documents containing the query:")
-        for filename in results:
-            print(filename)
-    else:
-        print("No documents found containing the query.")
     
+    # Display results
+    print(results)
+
     # Lookup a word in the current document
     if search_engine.current_document:
         word = 'atomic weight'

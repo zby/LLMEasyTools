@@ -1,6 +1,7 @@
 from llm_easy_tools import get_tool_defs, process_response
 from openai import OpenAI
 from pprint import pprint
+import os
 
 from examples.agentic_rag.markdown_search import MarkdownSearchEngine
 
@@ -15,8 +16,12 @@ After you know the answer, use the finish tool to answer the user query.
 """
 
 class AgenticRAG:
+
     def __init__(self, query):
-        markdown_search = MarkdownSearchEngine('indexdir', 'docs')
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        index_dir = os.path.join(current_dir, "indexdir")
+        docs_dir = os.path.join(current_dir, "docs")
+        markdown_search = MarkdownSearchEngine(index_dir, docs_dir)
         self.markdown_search = markdown_search
         self.client = OpenAI()
         self.answer = None
