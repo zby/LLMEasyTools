@@ -11,7 +11,7 @@ from pprint import pprint
 
 
 class LLMFunction:
-    def __init__(self, func, schema=None, schema_name=None, description=None):
+    def __init__(self, func, schema=None, name=None, description=None):
         self.func = func
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
@@ -19,13 +19,13 @@ class LLMFunction:
 
         if schema:
             self.schema = schema
-            if schema_name or description:
-                raise ValueError("Cannot specify schema_name or description when providing a complete schema")
+            if name or description:
+                raise ValueError("Cannot specify name or description when providing a complete schema")
         else:
             self.schema = get_function_schema(func)
 
-            if schema_name:
-                self.schema['name'] = schema_name
+            if name:
+                self.schema['name'] = name
 
             if description:
                 self.schema['description'] = description
@@ -95,7 +95,12 @@ def get_name(func: Callable | LLMFunction, case_insensitive: bool = False) -> st
         schema_name = schema_name.lower()
     return schema_name
 
-def get_function_schema(function: Callable, case_insensitive: bool=False) -> dict:
+def get_function_schema(function: Callable | LLMFunction, case_insensitive: bool=False) -> dict:
+    if isinstance(function, LLMFunction):
+        if case_insensitive:
+            raise ValueError("Cannot case insensitive for LLMFunction")
+        return function.schema
+
     description = ''
     if hasattr(function, '__doc__') and function.__doc__:
         description = function.__doc__
@@ -153,9 +158,7 @@ if __name__ == "__main__":
         """
         pass
 
-    @llm_function(schema_name="altered_name")
-    def function_decorated():
-        pass
+    altered_function = LLMFunction(function_with_doc, name="altered_name")
 
     class ExampleClass:
         def simple_method(self, count: int, size: float):
@@ -171,7 +174,7 @@ if __name__ == "__main__":
     pprint(get_tool_defs([
         example_object.simple_method, 
         function_with_doc, 
-        function_decorated,
+        altered_function,
         User
         ]))
 

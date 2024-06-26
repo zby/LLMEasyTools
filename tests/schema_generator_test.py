@@ -107,7 +107,7 @@ def test_name_change():
         """simple function does something"""
         pass
 
-    func = LLMFunction(new_simple_function, schema_name='changed_name')
+    func = LLMFunction(new_simple_function, name='changed_name')
     function_schema = func.schema
     assert function_schema['name'] == 'changed_name'
 
@@ -164,6 +164,12 @@ def test_model_init_function():
     assert function_schema['description'] == 'A user object'
     assert len(function_schema['parameters']['properties']) == 2
     assert len(function_schema['parameters']['required']) == 2
+
+    new_function = LLMFunction(User, name="extract_user_details")
+    assert new_function.schema['name'] == 'extract_user_details'
+    assert new_function.schema['description'] == 'A user object'
+    assert len(new_function.schema['parameters']['properties']) == 2
+    assert len(new_function.schema['parameters']['required']) == 2
 
 
 def test_case_insensitivity():
