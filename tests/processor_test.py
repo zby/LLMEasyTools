@@ -8,7 +8,7 @@ from typing import Any
 from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
 from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
 
-from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked
+from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked, process_one_tool_call
 from llm_easy_tools import LLMFunction
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -176,3 +176,34 @@ def test_parallel_tools():
     time_taken = end_time - start_time
     assert counter.counter == 10
     assert time_taken <= 2, f"Expected processing time to be less than or equal to 2 seconds, but was {time_taken}"
+
+def test_process_one_tool_call():
+    class User(BaseModel):
+        name: str
+        age: int
+
+    # Create a response with multiple tool calls
+    response = mk_chat_completion([
+        mk_tool_call("User", {"name": "Alice", "age": 30}),
+        mk_tool_call("User", {"name": "Bob", "age": 25})
+    ])
+
+    # Test processing the first tool call
+    result = process_one_tool_call(response, [User], index=0)
+    assert isinstance(result, ToolResult)
+    assert result.output == User(name="Alice", age=30)
+
+    # Test processing the second tool call
+    result = process_one_tool_call(response, [User], index=1)
+    assert isinstance(result, ToolResult)
+    assert result.output == User(name="Bob", age=25)
+
+    # Test processing a non-existent tool call
+    result = process_one_tool_call(response, [User], index=2)
+    assert result is None
+
+    # Test with an invalid function
+    invalid_response = mk_chat_completion([mk_tool_call("InvalidFunction", {})])
+    result = process_one_tool_call(invalid_response, [User])
+    assert isinstance(result, ToolResult)
+    assert result.error is not None

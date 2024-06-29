@@ -199,6 +199,30 @@ def process_response(
         results = list(map(lambda args: process_tool_call(*args), args_list)) 
     return results
 
+def process_one_tool_call(
+        response: ChatCompletion,
+        functions: list[Callable | LLMFunction],
+        index: int = 0,
+        prefix_class=None,
+        fix_json_args=True,
+        case_insensitive=False
+    ) -> Optional[ToolResult]:
+    """
+    Processes a single tool call from a ChatCompletion response at the specified index.
+    """
+    tool_calls = _get_tool_calls(response)
+    if not tool_calls or index >= len(tool_calls):
+        return None
+
+    return process_tool_call(tool_calls[index], functions, prefix_class, fix_json_args, case_insensitive)
+
+# Helper function to get tool calls from the response
+def _get_tool_calls(response: ChatCompletion) -> List[ChatCompletionMessageToolCall]:
+    if hasattr(response.choices[0].message, 'function_call') and (function_call := response.choices[0].message.function_call):
+        return [ChatCompletionMessageToolCall(id='A', function=Function(name=function_call.name, arguments=function_call.arguments), type='function')]
+    elif hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+        return response.choices[0].message.tool_calls
+    return []
 
 #######################################
 #
