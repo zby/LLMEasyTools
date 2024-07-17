@@ -165,15 +165,7 @@ def _extract_prefix_unpacked(tool_args, prefix_class):
     prefix = prefix_class(**prefix_args)
     return(prefix)
 
-def process_response(
-        response: ChatCompletion,
-        functions: list[Callable | LLMFunction],
-        choice_num=0,
-        prefix_class=None,
-        fix_json_args=True,
-        case_insensitive=False,
-        executor: ThreadPoolExecutor|ProcessPoolExecutor|None=None,
-        ) -> list[ToolResult]:
+def process_response( response: ChatCompletion, functions: list[Callable | LLMFunction], choice_num=0, **kwargs) -> list[ToolResult]:
     """
     Processes a ChatCompletion response, executing contained tool calls.
     For each tool call matches a function from the 'functions' list by name.
@@ -188,12 +180,23 @@ def process_response(
     Returns:
         list[ToolResult]: A list of ToolResult objects, each representing the outcome of a processed tool call.
     """
+    message = response.choices[choice_num].message
+    return process_message(message, functions, **kwargs)
+
+def process_message(
+    message: ChatCompletionMessage,
+    functions: list[Callable | LLMFunction],
+    prefix_class=None,
+    fix_json_args=True,
+    case_insensitive=False,
+    executor: ThreadPoolExecutor|ProcessPoolExecutor|None=None
+    ) -> list[ToolResult]:
     results = []
-    if hasattr(response.choices[choice_num].message, 'function_call') and (function_call:=response.choices[choice_num].message.function_call):
+    if hasattr(message, 'function_call') and (function_call:=message.function_call):
         # this is obsolete in openai - but maybe it is used by other llms?
         tool_calls = [ChatCompletionMessageToolCall(id='A', function=Function(name=function_call.name, arguments=function_call.arguments), type='function')]
-    elif hasattr(response.choices[choice_num].message, 'tool_calls') and response.choices[choice_num].message.tool_calls:
-        tool_calls = response.choices[choice_num].message.tool_calls
+    elif hasattr(message, 'tool_calls') and message.tool_calls:
+        tool_calls = message.tool_calls
     else:
         tool_calls = []
         # Prepare the arguments for each tool call
