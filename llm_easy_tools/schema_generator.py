@@ -1,6 +1,5 @@
 import inspect
 from typing import Annotated, Callable, Dict, Any, get_origin, Type
-from openai.types.chat import ChatCompletionToolParam
 
 import copy
 import pydantic as pd
@@ -46,7 +45,7 @@ def get_tool_defs(
         case_insensitive: bool = False,
         prefix_class: Type[BaseModel]|None = None,
         prefix_schema_name: bool = True
-        ) -> list[ChatCompletionToolParam]:
+        ) -> list[dict]:
     result = []
     for function in functions:
         if isinstance(function, LLMFunction):

@@ -21,7 +21,6 @@ classifiers = [
 dependencies = [
     "pydantic",
     "docstring_parser~=0.15",
-    "openai~=1.23"
 ]
 [project.urls]
 repository = "https://github.com/zby/LLMEasyTools"

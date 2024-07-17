@@ -8,7 +8,7 @@ It focuses on *agentic* workflows with the LLM choosing the *tool* appropriate f
 offering a minimalist approach that doesn't get in your way.
 
 One of the key advantages of LLMEasyTools is its non-intrusive design. 
-It doesn't take over the interaction with the OpenAI client, making it easier for developers
+It doesn't take over the interaction with the LLM client, making it easier for developers
 to debug their code and optimize the communication with the LLM.
 
 By integrating Pydantic, LLMEasyTools ensures robust data validation and schema generation.
@@ -41,7 +41,7 @@ pytest -v tests
 
 ## Usage
 
-There are two parts of the so called *LLM function calling* that are not covered by the standard openai library:
+There are two parts of the so called *LLM function calling* that are not covered by the standard LLM client library:
 - schema generation
 - function dispatching
 

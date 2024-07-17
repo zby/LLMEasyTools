@@ -10,11 +10,8 @@ from typing import Optional, List, Union, Any, get_origin, get_args
 from pydantic import BaseModel, ValidationError
 from dataclasses import dataclass, field
 
-from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.chat import ChatCompletionMessage
-from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
-
 from llm_easy_tools.schema_generator import get_name, parameters_basemodel_from_function, LLMFunction
+from llm_easy_tools.types import ChatCompletion,  ChatCompletionMessageToolCall, ChatCompletionMessage, ChatCompletionMessageToolCall, Function
 
 class NoMatchingTool(Exception):
     def __init__(self, message):
@@ -232,6 +229,7 @@ def _get_tool_calls(response: ChatCompletion) -> List[ChatCompletionMessageToolC
 
 
 if __name__ == "__main__":
+    from llm_easy_tools.types import mk_chat_with_tool_call
 
     def original_function():
         return 'Result of function_decorated'
@@ -248,29 +246,6 @@ if __name__ == "__main__":
     class User(BaseModel):
         name: str
         email: str
-
-    def mk_chat_with_tool_call(name, args):
-        message = ChatCompletionMessage(
-            role="assistant",
-            tool_calls=[
-                {
-                    "id": 'A',
-                    "type": 'function',
-                    "function": {
-                        "arguments": json.dumps(args),
-                        "name": name
-                    }
-                }
-            ]
-        )
-        chat_completion = ChatCompletion(
-            id='A',
-            created=0,
-            model='A',
-            choices=[{'finish_reason': 'stop', 'index': 0, 'message': message}],
-            object='chat.completion'
-        )
-        return chat_completion
 
 
     pprint(process_response(mk_chat_with_tool_call('altered_name', {}), [function_decorated]))

@@ -5,8 +5,7 @@ from time import sleep, time
 from unittest.mock import Mock
 from pydantic import BaseModel, Field, ValidationError
 from typing import Any
-from openai.types.chat.chat_completion import ChatCompletionMessage, ChatCompletion, Choice
-from openai.types.chat.chat_completion_message_tool_call   import ChatCompletionMessageToolCall, Function
+from llm_easy_tools.types import SimpleMessage, SimpleToolCall, SimpleFunction, SimpleChoice, SimpleCompletion
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked, process_one_tool_call
 from llm_easy_tools import LLMFunction
@@ -14,22 +13,22 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 def mk_tool_call(name, args):
     arguments = json.dumps(args)
-    return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=arguments), type='function')
+    return SimpleToolCall(id='A', function=SimpleFunction(name=name, arguments=arguments), type='function')
 
 def mk_tool_call_jason(name, args):
-    return ChatCompletionMessageToolCall(id='A', function=Function(name=name, arguments=args), type='function')
+    return SimpleToolCall(id='A', function=SimpleFunction(name=name, arguments=args), type='function')
 
 def mk_chat_completion(tool_calls):
-    return ChatCompletion(
+    return SimpleCompletion(
         id='A',
         created=0,
         model='gpt-3.5-turbo',
         object='chat.completion',
         choices=[
-            Choice(
+            SimpleChoice(
                 finish_reason='stop',
                 index=0,
-                message=ChatCompletionMessage(role='assistant', tool_calls=tool_calls))
+                message=SimpleMessage(role='assistant', tool_calls=tool_calls))
         ]
     )
 
