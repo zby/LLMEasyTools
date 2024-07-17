@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "LLMEasyTools"
 version = "0.24"
 authors = [{ name = "Zbigniew Łukasiak", email = "zzbbyy@gmail.com" }, { name = "Natalia Borovskikh" }]
-description = "OpenAI tools and functions with no fuss."
+description = "Tools for LLM agents."
 license = { file = "LICENSE" }
 readme = "README.md"
 classifiers = [
@@ -30,6 +30,7 @@ packages = ["llm_easy_tools"]
 
 [project.optional-dependencies]
 test = ["pytest~=7.4.4"]
+examples = ["openai"]
 
 [tool.pytest.ini_options]
 testpaths = [
