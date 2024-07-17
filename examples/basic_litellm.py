@@ -1,9 +1,6 @@
 from llm_easy_tools import get_tool_defs, process_response
-from openai import OpenAI
+from litellm import completion
 from pprint import pprint
-
-client = OpenAI()
-# This assumes that OpenAI credentials are in the environment variable OPENAI_API_KEY
 
 def contact_user(name: str, city: str) -> str:
     return f"User {name} from {city} was contacted"
@@ -14,7 +11,7 @@ tool_schemas = get_tool_defs([contact_user])
 
 text = "John lives in Warsaw. Bob lives in London."
 
-response = client.chat.completions.create(
+response = completion(
     model="gpt-3.5-turbo-1106",
     messages=[
         {"role": "system", "content": "You are a personal assistant. Your current task is to contact all users mentioned in the message."},
