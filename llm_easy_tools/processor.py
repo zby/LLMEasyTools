@@ -236,7 +236,7 @@ if __name__ == "__main__":
     def original_function():
         return 'Result of function_decorated'
 
-    function_decorated = LLMFunction(original_function, schema_name="altered_name")
+    function_decorated = LLMFunction(original_function, name="altered_name")
 
     class ExampleClass:
         def simple_method(self, count: int, size: float):

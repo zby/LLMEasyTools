@@ -2,6 +2,7 @@
 **OpenAI tools and functions calls with simplicity**
 
 LLMEasyTool is a minimal Python package designed for seamless interaction with 
+[LiteLLM](https://pypi.org/project/litellm/),
 [OpenAI Python API library](https://github.com/openai/openai-python) or compatible.
 It focuses on *agentic* workflows with the LLM choosing the *tool* appropriate for a task,
 offering a minimalist approach that doesn't get in your way.
