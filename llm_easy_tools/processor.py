@@ -21,13 +21,6 @@ class NoMatchingTool(Exception):
         self.message = message
         super().__init__(self.message)
 
-from typing import Protocol, runtime_checkable
-
-@runtime_checkable
-class ToContent(Protocol):
-    def to_content(self) -> dict[str, str]:
-        ...
-
 @dataclass
 class ToolResult:
     """
@@ -59,8 +52,6 @@ class ToolResult:
             content = f"{self.error}"
         elif self.output is None:
             content = ''
-        elif isinstance(self.output, ToContent):
-            content = self.output.to_content()
         elif isinstance(self.output, BaseModel):
             content = f"{self.name} created"
         else:
