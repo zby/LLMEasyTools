@@ -4,7 +4,7 @@ from time import sleep, time
 
 from unittest.mock import Mock
 from pydantic import BaseModel, Field, ValidationError
-from typing import Any
+from typing import Any, Optional
 from llm_easy_tools.types import SimpleMessage, SimpleToolCall, SimpleFunction, SimpleChoice, SimpleCompletion
 
 from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked, process_one_tool_call
@@ -132,12 +132,18 @@ def test_json_fix():
 
 def test_list_in_string_fix():
     class User(BaseModel):
-        names: list[str]
+        names: Optional[list[str]]
 
     tool_call = mk_tool_call("User", {"names": "John, Doe"})
     result = process_tool_call(tool_call, [User])
     assert result.output.names == ["John", "Doe"]
     assert len(result.soft_errors) > 0
+
+    tool_call = mk_tool_call("User", {"names": "[\"John\", \"Doe\"]"})
+    result = process_tool_call(tool_call, [User])
+    assert result.output.names == ["John", "Doe"]
+    assert len(result.soft_errors) > 0
+
 
     result = process_tool_call(tool_call, [User], fix_json_args=False)
     assert isinstance(result.error, ValidationError)

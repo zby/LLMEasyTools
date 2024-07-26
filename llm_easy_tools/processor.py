@@ -121,7 +121,11 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
     return result
 
 def split_string_to_list(s: str) -> list[str]:
-    return [item.strip() for item in s.split(',')]
+    try:
+        # GPT-4o-mini sometimes returns double JSON encoding of lists
+        return json.loads(s)
+    except json.JSONDecodeError:
+        return [item.strip() for item in s.split(',')]
 
 def _process_unpacked(function, tool_args={}, fix_json_args=True):
     if isinstance(function, LLMFunction):
@@ -131,8 +135,7 @@ def _process_unpacked(function, tool_args={}, fix_json_args=True):
     if fix_json_args:
         for field, field_info in model.model_fields.items():
             field_annotation = field_info.annotation
-            origin = get_origin(field_annotation)
-            if origin is list:
+            if _is_list_type(field_annotation):
                 if field in tool_args and isinstance(tool_args[field], str):
                     # this happens in Claude from Anthropic 
                     tool_args[field] = split_string_to_list(tool_args[field])
@@ -143,6 +146,16 @@ def _process_unpacked(function, tool_args={}, fix_json_args=True):
     for field, _ in model.model_fields.items():
         args[field] = getattr(model_instance, field)
     return function(**args), soft_errors
+
+def _is_list_type(annotation):
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if origin is list:
+        return True
+    elif origin is Union or origin is Optional:
+        return any(_is_list_type(arg) for arg in args)
+    return False
 
 def _extract_prefix_unpacked(tool_args, prefix_class):
     # modifies tool_args
