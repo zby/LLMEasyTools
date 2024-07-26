@@ -122,7 +122,7 @@ def process_tool_call(tool_call, functions_or_models, prefix_class=None, fix_jso
 
 def split_string_to_list(s: str) -> list[str]:
     try:
-        # GPT-4o-mini sometimes returns double JSON encoding of lists
+        # Claude sometimes returns double JSON encoding of lists
         return json.loads(s)
     except json.JSONDecodeError:
         return [item.strip() for item in s.split(',')]
