@@ -36,6 +36,9 @@ examples = ["openai"]
 testpaths = [
     "tests",
 ]
+pythonpath = [
+    "."
+]
 
 
 [tool.setuptools.dynamic]
