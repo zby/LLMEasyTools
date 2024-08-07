@@ -44,14 +44,15 @@ def get_tool_defs(
         functions: list[Callable | LLMFunction],
         case_insensitive: bool = False,
         prefix_class: Type[BaseModel]|None = None,
-        prefix_schema_name: bool = True
+        prefix_schema_name: bool = True,
+        strict: bool = False
         ) -> list[dict]:
     result = []
     for function in functions:
         if isinstance(function, LLMFunction):
             fun_schema = function.schema
         else:
-            fun_schema = get_function_schema(function, case_insensitive)
+            fun_schema = get_function_schema(function, case_insensitive, strict)
 
         if prefix_class:
             fun_schema = insert_prefix(prefix_class, fun_schema, prefix_schema_name, case_insensitive)
@@ -94,7 +95,7 @@ def get_name(func: Callable | LLMFunction, case_insensitive: bool = False) -> st
         schema_name = schema_name.lower()
     return schema_name
 
-def get_function_schema(function: Callable | LLMFunction, case_insensitive: bool=False) -> dict:
+def get_function_schema(function: Callable | LLMFunction, case_insensitive: bool=False, strict: bool=False) -> dict:
     if isinstance(function, LLMFunction):
         if case_insensitive:
             raise ValueError("Cannot case insensitive for LLMFunction")
@@ -116,6 +117,14 @@ def get_function_schema(function: Callable | LLMFunction, case_insensitive: bool
     model_json_schema = model.model_json_schema()
     _recursive_purge_titles(model_json_schema)
     function_schema['parameters'] = model_json_schema
+
+    if strict:
+        function_schema['additionalProperties'] = False
+        function_schema['parameters']['additionalProperties'] = False
+        if '$defs' in function_schema['parameters']:
+            for def_key in function_schema['parameters']['$defs']:
+                function_schema['parameters']['$defs'][def_key]['additionalProperties'] = False
+
     return function_schema
 
 def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = False):

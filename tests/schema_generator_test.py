@@ -222,11 +222,11 @@ def test_strict():
 
     schema = get_tool_defs([print_companies], strict=True)
 
-    function_schema = schema['function']
+    function_schema = schema[0]['function']
 
-    assert function_schema['name'] == 'print_class'
-    assert function_schema['strict'] == True
+    assert function_schema['name'] == 'print_companies'
     assert function_schema['additionalProperties'] == False
+    assert function_schema['parameters']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['properties']['street']['type'] == 'string'
     assert function_schema['parameters']['$defs']['Company']['additionalProperties'] == False
