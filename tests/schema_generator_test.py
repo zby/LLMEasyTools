@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from llm_easy_tools import get_function_schema, insert_prefix, LLMFunction
 
-from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles, get_name
+from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles, get_name, get_tool_defs
 
 from pprint import pprint
 
@@ -190,3 +190,19 @@ def test_function_no_type_annotation():
     with pytest.raises(ValueError) as exc_info:
         get_function_schema(function_with_missing_type)
     assert str(exc_info.value) == "Parameter 'param' has no type annotation"
+
+def test_pydantic_param():
+    class Query(BaseModel):
+        query: str
+        region: str
+
+
+    def search(query: Query):
+        ...
+
+    schema = get_tool_defs([search])
+
+    pprint(schema)
+
+    assert schema[0]['function']['name'] == 'search'
+    assert schema[0]['function']['description'] == ''
