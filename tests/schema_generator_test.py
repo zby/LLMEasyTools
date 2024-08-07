@@ -206,3 +206,27 @@ def test_pydantic_param():
 
     assert schema[0]['function']['name'] == 'search'
     assert schema[0]['function']['description'] == ''
+
+def test_strict():
+    class Address(BaseModel):
+        street: str
+        city: str
+
+    class Company(BaseModel):
+        name: str
+        speciality: str
+        addresses: list[Address]
+
+    def print_companies(companies: list[Company]):
+        ...
+
+    schema = get_tool_defs([print_companies], strict=True)
+
+    function_schema = schema['function']
+
+    assert function_schema['name'] == 'print_class'
+    assert function_schema['strict'] == True
+    assert function_schema['additionalProperties'] == False
+    assert function_schema['parameters']['$defs']['Address']['additionalProperties'] == False
+    assert function_schema['parameters']['$defs']['Address']['properties']['street']['type'] == 'string'
+    assert function_schema['parameters']['$defs']['Company']['additionalProperties'] == False
