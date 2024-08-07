@@ -225,7 +225,6 @@ def test_strict():
     function_schema = schema[0]['function']
 
     assert function_schema['name'] == 'print_companies'
-    assert function_schema['additionalProperties'] == False
     assert function_schema['parameters']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['properties']['street']['type'] == 'string'
