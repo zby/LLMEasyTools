@@ -61,6 +61,12 @@ def get_tool_defs(
 def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]:
     fields = {}
     parameters = inspect.signature(function).parameters
+    if len(parameters) == 1:
+        parameter = list(parameters.values())[0]
+        # Check if the single parameter is a Pydantic model
+        if issubclass(parameter.annotation, pd.BaseModel):
+            return parameter.annotation
+
     for name, parameter in parameters.items():
         description = None
         type_ = parameter.annotation
