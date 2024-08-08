@@ -167,7 +167,7 @@ def _extract_prefix_unpacked(tool_args, prefix_class):
     prefix = prefix_class(**prefix_args)
     return(prefix)
 
-def process_response( response: ChatCompletion, functions: list[Callable | LLMFunction], choice_num=0, **kwargs) -> list[ToolResult]:
+def process_response( response: ChatCompletion, functions: list[Union[Callable, LLMFunction]], choice_num=0, **kwargs) -> list[ToolResult]:
     """
     Processes a ChatCompletion response, executing contained tool calls.
     For each tool call matches a function from the 'functions' list by name.
@@ -191,7 +191,7 @@ def process_message(
     prefix_class=None,
     fix_json_args=True,
     case_insensitive=False,
-    executor: ThreadPoolExecutor|ProcessPoolExecutor|None=None
+    executor: Union[ThreadPoolExecutor, ProcessPoolExecutor, None]=None
     ) -> list[ToolResult]:
     results = []
     if hasattr(message, 'function_call') and (function_call:=message.function_call):
@@ -214,7 +214,7 @@ def process_message(
 
 def process_one_tool_call(
         response: ChatCompletion,
-        functions: list[Callable | LLMFunction],
+        functions: list[Union[Callable, LLMFunction]],
         index: int = 0,
         prefix_class=None,
         fix_json_args=True,
