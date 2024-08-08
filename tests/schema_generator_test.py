@@ -233,7 +233,6 @@ def test_strict():
     assert function_schema['parameters']['$defs']['Company']['additionalProperties'] == False
 
 def test_postponed_evaluation():
-    from __future__ import annotations
 
     class Query(BaseModel):
         query: str
