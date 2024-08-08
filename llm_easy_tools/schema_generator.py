@@ -68,10 +68,10 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
         type_ = parameter.annotation
         if type_ is inspect._empty:
             raise ValueError(f"Parameter '{name}' has no type annotation")
-        if get_origin(parameter.annotation) is Annotated:
-            if parameter.annotation.__metadata__:
-                description = parameter.annotation.__metadata__[0]
-            type_ = parameter.annotation.__args__[0]
+        if get_origin(type_) is Annotated:
+            if type_.__metadata__:
+                description = type_.__metadata__[0]
+            type_ = type_.__args__[0]
         default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
         fields[name] = (type_, pd.Field(default, description=description))
     return pd.create_model(f'{function.__name__}_ParameterModel', **fields)
