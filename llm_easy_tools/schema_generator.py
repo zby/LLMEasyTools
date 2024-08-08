@@ -44,7 +44,7 @@ def tool_def(function_schema: dict) -> dict:
 def get_tool_defs(
         functions: list[Union[Callable, LLMFunction]],
         case_insensitive: bool = False,
-        prefix_class: Type[BaseModel]|None = None,
+        prefix_class: Union[Type[BaseModel], None] = None,
         prefix_schema_name: bool = True,
         strict: bool = False
         ) -> list[dict]:
@@ -86,7 +86,7 @@ def _recursive_purge_titles(d: Dict[str, Any]) -> None:
             else:
                 _recursive_purge_titles(d[key])
 
-def get_name(func: Callable | LLMFunction, case_insensitive: bool = False) -> str:
+def get_name(func: Union[Callable, LLMFunction], case_insensitive: bool = False) -> str:
     if isinstance(func, LLMFunction):
         schema_name = func.schema['name']
     else:
@@ -96,7 +96,7 @@ def get_name(func: Callable | LLMFunction, case_insensitive: bool = False) -> st
         schema_name = schema_name.lower()
     return schema_name
 
-def get_function_schema(function: Callable | LLMFunction, case_insensitive: bool=False, strict: bool=False) -> dict:
+def get_function_schema(function: Union[Callable, LLMFunction], case_insensitive: bool=False, strict: bool=False) -> dict:
     if isinstance(function, LLMFunction):
         if case_insensitive:
             raise ValueError("Cannot case insensitive for LLMFunction")
