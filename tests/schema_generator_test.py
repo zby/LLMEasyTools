@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from typing import List, Optional, Union, Literal, Annotated
@@ -229,3 +231,21 @@ def test_strict():
     assert function_schema['parameters']['$defs']['Address']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['properties']['street']['type'] == 'string'
     assert function_schema['parameters']['$defs']['Company']['additionalProperties'] == False
+
+def test_postponed_evaluation():
+
+    class Query(BaseModel):
+        query: str
+        region: str
+
+    def search(query: Query):
+        ...
+
+    schema = get_tool_defs([search])
+
+    pprint(schema)
+
+    assert schema[0]['function']['name'] == 'search'
+    assert schema[0]['function']['description'] == ''
+    assert 'query' in schema[0]['function']['parameters']['properties']
+    assert 'region' in schema[0]['function']['parameters']['properties']['query']['properties']
