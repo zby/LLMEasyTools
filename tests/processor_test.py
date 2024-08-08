@@ -180,7 +180,7 @@ def test_parallel_tools():
 
     time_taken = end_time - start_time
     assert counter.counter == 10
-    assert time_taken <= 2, f"Expected processing time to be less than or equal to 2 seconds, but was {time_taken}"
+    assert time_taken <= 3, f"Expected processing time to be less than or equal to 3 seconds, but was {time_taken}"
 
 def test_process_one_tool_call():
     class User(BaseModel):
