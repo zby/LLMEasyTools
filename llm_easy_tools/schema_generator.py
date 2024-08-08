@@ -74,7 +74,9 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
             type_ = parameter.annotation.__args__[0]
         default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
         fields[name] = (type_, pd.Field(default, description=description))
-    return pd.create_model(f'{function.__name__}_ParameterModel', **fields)
+    model = pd.create_model(f'{function.__name__}_ParameterModel', **fields)
+    model.model_rebuild()
+    return model
 
 
 def _recursive_purge_titles(d: Dict[str, Any]) -> None:
@@ -245,4 +247,3 @@ if __name__ == "__main__":
         altered_function,
         User
         ]))
-
