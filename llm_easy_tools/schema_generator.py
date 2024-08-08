@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Callable, Dict, Any, get_origin, Type
+from typing import Annotated, Callable, Dict, Any, get_origin, Type, Union
 from typing_extensions import TypeGuard
 
 import copy
@@ -42,7 +42,7 @@ def tool_def(function_schema: dict) -> dict:
     }
 
 def get_tool_defs(
-        functions: list[Callable | LLMFunction],
+        functions: list[Union[Callable, LLMFunction]],
         case_insensitive: bool = False,
         prefix_class: Type[BaseModel]|None = None,
         prefix_schema_name: bool = True,
@@ -245,4 +245,3 @@ if __name__ == "__main__":
         altered_function,
         User
         ]))
-
