@@ -1,5 +1,5 @@
 import inspect
-from typing import Annotated, Callable, Dict, Any, get_origin, Type, Union
+from typing import Annotated, Callable, Dict, Any, get_origin, Type, Union, get_type_hints, ForwardRef
 from typing_extensions import TypeGuard
 
 import copy
@@ -63,18 +63,23 @@ def get_tool_defs(
 def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]:
     fields = {}
     parameters = inspect.signature(function).parameters
+    type_hints = get_type_hints(function)
     for name, parameter in parameters.items():
         description = None
-        type_ = parameter.annotation
+        type_ = type_hints.get(name, parameter.annotation)
         if type_ is inspect._empty:
             raise ValueError(f"Parameter '{name}' has no type annotation")
-        if get_origin(parameter.annotation) is Annotated:
-            if parameter.annotation.__metadata__:
-                description = parameter.annotation.__metadata__[0]
-            type_ = parameter.annotation.__args__[0]
+        if isinstance(type_, ForwardRef):
+            type_ = type_._evaluate(globals(), locals(), frozenset())
+        if get_origin(type_) is Annotated:
+            if type_.__metadata__:
+                description = type_.__metadata__[0]
+            type_ = type_.__args__[0]
         default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
         fields[name] = (type_, pd.Field(default, description=description))
-    return pd.create_model(f'{function.__name__}_ParameterModel', **fields)
+    model = pd.create_model(f'{function.__name__}_ParameterModel', **fields)
+    model.model_rebuild()
+    return model
 
 
 def _recursive_purge_titles(d: Dict[str, Any]) -> None:
