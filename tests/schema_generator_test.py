@@ -102,7 +102,7 @@ def test_methods():
     params_schema = function_schema['parameters']
     assert len(params_schema['properties']) == 2
 
-def test_name_change():
+def test_LLMFunction():
     def new_simple_function(count: int, size: Optional[float] = None):
         """simple function does something"""
         pass
@@ -110,7 +110,11 @@ def test_name_change():
     func = LLMFunction(new_simple_function, name='changed_name')
     function_schema = func.schema
     assert function_schema['name'] == 'changed_name'
+    assert not 'strict' in function_schema or function_schema['strict'] == False
 
+    func = LLMFunction(simple_function, strict=True)
+    function_schema = func.schema
+    assert function_schema['strict'] == True
 
 def test_merge_schemas():
 
@@ -202,8 +206,6 @@ def test_pydantic_param():
 
     schema = get_tool_defs([search])
 
-    pprint(schema)
-
     assert schema[0]['function']['name'] == 'search'
     assert schema[0]['function']['description'] == ''
 
@@ -222,9 +224,12 @@ def test_strict():
 
     schema = get_tool_defs([print_companies], strict=True)
 
+    pprint(schema)
+
     function_schema = schema[0]['function']
 
     assert function_schema['name'] == 'print_companies'
+    assert function_schema['strict'] == True
     assert function_schema['parameters']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['properties']['street']['type'] == 'string'

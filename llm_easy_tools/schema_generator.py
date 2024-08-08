@@ -11,7 +11,7 @@ from pprint import pprint
 
 
 class LLMFunction:
-    def __init__(self, func, schema=None, name=None, description=None):
+    def __init__(self, func, schema=None, name=None, description=None, strict=False):
         self.func = func
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
@@ -22,7 +22,7 @@ class LLMFunction:
             if name or description:
                 raise ValueError("Cannot specify name or description when providing a complete schema")
         else:
-            self.schema = get_function_schema(func)
+            self.schema = get_function_schema(func, strict=strict)
 
             if name:
                 self.schema['name'] = name
@@ -118,7 +118,7 @@ def get_function_schema(function: Union[Callable, LLMFunction], case_insensitive
     model_json_schema = model.model_json_schema()
     if strict:
         model_json_schema = to_strict_json_schema(model_json_schema)
-        function_schema['additionalProperties'] = False
+        function_schema['strict'] = True
     else:
         _recursive_purge_titles(model_json_schema)
     function_schema['parameters'] = model_json_schema
