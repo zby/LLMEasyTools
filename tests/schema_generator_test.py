@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from typing import List, Optional, Union, Literal, Annotated
