@@ -3,7 +3,7 @@ import inspect
 import traceback
 
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from typing import Callable, Union, Optional, Any
+from typing import Callable, Union, Optional, Any, get_origin, get_args
 from pprint import pprint
 
 from pydantic import BaseModel, ValidationError
