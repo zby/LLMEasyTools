@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
 
 from pprint import pprint
-
+import sys
 
 class LLMFunction:
     def __init__(self, func, schema=None, name=None, description=None, strict=False):
@@ -63,6 +63,14 @@ def get_tool_defs(
 def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]:
     fields = {}
     parameters = inspect.signature(function).parameters
+    # Get the global namespace, handling both functions and methods
+    if inspect.ismethod(function):
+        # For methods, get the class's module globals
+        function_globals = sys.modules[function.__module__].__dict__
+    else:
+        # For regular functions, use __globals__ if available
+        function_globals = getattr(function, '__globals__', {})
+
     for name, parameter in parameters.items():
         description = None
         type_ = parameter.annotation
@@ -72,6 +80,10 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
             if type_.__metadata__:
                 description = type_.__metadata__[0]
             type_ = type_.__args__[0]
+        if isinstance(type_, str):
+            # this happens in postponed annotation evaluation, we need to try to resolve the type
+            # if the type is not in the global namespace, we will get a NameError
+            type_ = eval(type_, function_globals)
         default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
         fields[name] = (type_, pd.Field(default, description=description))
     return pd.create_model(f'{function.__name__}_ParameterModel', **fields)

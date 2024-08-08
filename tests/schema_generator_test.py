@@ -208,6 +208,7 @@ def test_pydantic_param():
 
     assert schema[0]['function']['name'] == 'search'
     assert schema[0]['function']['description'] == ''
+    assert schema[0]['function']['parameters']['properties']['query']['$ref'] == '#/$defs/Query'
 
 def test_strict():
     class Address(BaseModel):
