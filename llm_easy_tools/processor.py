@@ -176,7 +176,7 @@ def process_response( response: ChatCompletion, functions: list[Callable | LLMFu
 
     Args:
         response (ChatCompletion): The response object containing tool calls.
-        functions (List[Callable]): A list of functions or pydantic models to call.
+        functions (list[Callable]): A list of functions or pydantic models to call.
         choice_num (int, optional): The index of the choice to process from the response. Defaults to 0.
 
     Returns:
@@ -230,7 +230,7 @@ def process_one_tool_call(
     return process_tool_call(tool_calls[index], functions, prefix_class, fix_json_args, case_insensitive)
 
 # Helper function to get tool calls from the response
-def _get_tool_calls(response: ChatCompletion) -> List[ChatCompletionMessageToolCall]:
+def _get_tool_calls(response: ChatCompletion) -> list[ChatCompletionMessageToolCall]:
     if hasattr(response.choices[0].message, 'function_call') and (function_call := response.choices[0].message.function_call):
         return [ChatCompletionMessageToolCall(id='A', function=Function(name=function_call.name, arguments=function_call.arguments), type='function')]
     elif hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
