@@ -1,4 +1,5 @@
-from llm_easy_tools import get_tool_defs, process_response
+# This example shows how to use function calling without using the llm_easy_tools library
+
 from openai import OpenAI
 from pprint import pprint
 import json
@@ -44,7 +45,7 @@ response = client.chat.completions.create(
 for tool_call in response.choices[0].message.tool_calls:
     # you need to get the function object from the global namespace
     function = globals()[tool_call.function.name]
-    # and then call it with the arguments from the tool call
+    # and then parse the arguments from the tool call
     function_args = json.loads(tool_call.function.arguments)
     # and then call it with the arguments from the tool call
     result = function(**function_args)
