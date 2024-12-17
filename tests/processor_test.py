@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, ValidationError
 from typing import Any, Optional
 from llm_easy_tools.types import SimpleMessage, SimpleToolCall, SimpleFunction, SimpleChoice, SimpleCompletion
 
-from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, _extract_prefix_unpacked, process_one_tool_call
+from llm_easy_tools.processor import process_response, process_tool_call, ToolResult, process_one_tool_call
 from llm_easy_tools import LLMFunction
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
@@ -92,16 +92,6 @@ def test_process_complex():
     assert isinstance(result, ToolResult)
     assert isinstance(result.output, list)
     assert isinstance(result.output[0], Company)
-
-def test_prefixing():
-
-    class Reflection(BaseModel):
-        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
-
-    args = { 'relevancy': 'good', 'name': 'hammer'}
-    prefix = _extract_prefix_unpacked(args, Reflection)
-    assert isinstance(prefix, Reflection)
-    assert 'reflection' not in args # prefix params extracted
 
 
 def test_json_fix():

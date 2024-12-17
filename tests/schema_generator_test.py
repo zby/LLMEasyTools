@@ -3,7 +3,7 @@ import pytest
 from typing import List, Optional, Union, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator
 
-from llm_easy_tools import get_function_schema, insert_prefix, LLMFunction
+from llm_easy_tools import get_function_schema, LLMFunction
 
 from llm_easy_tools.schema_generator import parameters_basemodel_from_function, _recursive_purge_titles, get_name, get_tool_defs
 
@@ -115,45 +115,6 @@ def test_LLMFunction():
     func = LLMFunction(simple_function, strict=True)
     function_schema = func.schema
     assert function_schema['strict'] == True
-
-def test_merge_schemas():
-
-    class Reflection(BaseModel):
-        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
-        next_actions_plan: str = Field(..., description="What you plan to do next and why")
-
-    function_schema = get_function_schema(simple_function)
-    new_schema = insert_prefix(Reflection, function_schema)
-    assert new_schema['name'] == "Reflection_and_simple_function"
-    assert len(new_schema['parameters']['properties']) == 4
-    assert len(new_schema['parameters']['required']) == 3
-    assert len(function_schema['parameters']['properties']) == 2  # the old schema is not changed
-    assert len(function_schema['parameters']['required']) == 1  # the old schema is not changed
-    param_names = list(new_schema['parameters']['properties'].keys())
-    assert param_names == ['relevancy', 'next_actions_plan', 'count', 'size']
-
-    function_schema = get_function_schema(simple_function)
-    new_schema = insert_prefix(Reflection, function_schema, case_insensitive=True)
-    assert new_schema['name'] == "reflection_and_simple_function"
-
-def test_noparams_function_merge():
-
-    def function_no_params():
-        pass
-
-    class Reflection(BaseModel):
-        relevancy: str = Field(..., description="Whas the last retrieved information relevant and why?")
-        next_actions_plan: str = Field(..., description="What you plan to do next and why")
-
-    # Function without docstring and EmptyModelWithDoc as parameter
-    function_schema = get_function_schema(function_no_params)
-    assert function_schema['name'] == 'function_no_params'
-    assert function_schema['parameters']['properties'] == {}
-    pprint(function_schema)
-
-    new_schema = insert_prefix(Reflection, function_schema)
-    assert len(new_schema['parameters']['properties']) == 2
-    assert new_schema['name'] == 'Reflection_and_function_no_params'
 
 def test_model_init_function():
 

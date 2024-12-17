@@ -44,8 +44,6 @@ def tool_def(function_schema: dict) -> dict:
 def get_tool_defs(
         functions: list[Union[Callable, LLMFunction]],
         case_insensitive: bool = False,
-        prefix_class: Union[Type[BaseModel], None] = None,
-        prefix_schema_name: bool = True,
         strict: bool = False
         ) -> list[dict]:
     result = []
@@ -54,9 +52,6 @@ def get_tool_defs(
             fun_schema = function.schema
         else:
             fun_schema = get_function_schema(function, case_insensitive, strict)
-
-        if prefix_class:
-            fun_schema = insert_prefix(prefix_class, fun_schema, prefix_schema_name, case_insensitive)
         result.append(tool_def(fun_schema))
     return result
 
@@ -198,32 +193,6 @@ def is_dict(obj: object) -> TypeGuard[dict[str, object]]:
     # just pretend that we know there are only `str` keys
     # as that check is not worth the performance cost
     return isinstance(obj, dict)
-
-def insert_prefix(prefix_class, schema, prefix_schema_name=True, case_insensitive = False):
-    if not issubclass(prefix_class, BaseModel):
-        raise TypeError(
-            f"The given class reference is not a subclass of pydantic BaseModel"
-        )
-    prefix_schema = prefix_class.model_json_schema()
-    _recursive_purge_titles(prefix_schema)
-    prefix_schema.pop('description', '')
-
-    if 'parameters' in schema:
-        required = schema['parameters'].get('required', [])
-        prefix_schema['required'].extend(required)
-        for key, value in schema['parameters']['properties'].items():
-            prefix_schema['properties'][key] = value
-    new_schema = copy.copy(schema)  # Create a shallow copy of the schema
-    new_schema['parameters'] = prefix_schema
-    if len(new_schema['parameters']['properties']) == 0:  # If the parameters list is empty
-        new_schema.pop('parameters')
-    if prefix_schema_name:
-        if case_insensitive:
-            prefix_name = prefix_class.__name__.lower()
-        else:
-            prefix_name = prefix_class.__name__
-        new_schema['name'] = prefix_name + "_and_" + schema['name']
-    return new_schema
 
 
 #######################################
