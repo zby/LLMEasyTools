@@ -16,6 +16,7 @@ By integrating Pydantic, LLMEasyTools ensures robust data validation and schema 
 ## Features
 
 - **Schema Generation**: Effortlessly create JSON schemas from type annotations.
+- Parameter descriptions from pydantic Field or Annotated.
 - Structured Data from LLM: Works with Pydantic models and basic data structures.
 - Function Name Mapping: Flexibly map JSON schema names to Python code. Optional case insensitivity
 - Dispatching Function Calls: Directly invoke functions based on LLM response.
@@ -23,6 +24,7 @@ By integrating Pydantic, LLMEasyTools ensures robust data validation and schema 
 - Stateless api: Schema generation and dispatching function calls are pure functions, even though tools themselves can be stateful.
 - No Patching!: No globals, some 400 lines of mostly straightforward code.
 - Parallel tool execution: tool calls from one response can be executed in parallel.
+- Parameter descriptions from pydantic Field or Annotated.
 
 
 ## Installation
@@ -113,7 +115,57 @@ Output:
 UserDetail(name='John', city='Warsaw')
 ```
 
-### Example of using type annotations for descriptions in schema:
+### Description of parameters from pydantic Field
+
+```python
+from llm_easy_tools import get_tool_defs
+from pydantic import Field
+from pprint import pprint
+
+def contact_user(
+        name: str = Field(description="The name of the user"),
+        email: str = Field(description="The email of the user"),
+        phone: str = Field(description="The phone number of the user")
+        ) -> str:
+    """
+    Contact the user with the given name, email, and phone number.
+    """
+    pass
+
+pprint(get_tool_defs([contact_user]))
+
+# OUTPUT
+[
+    {
+        'function': {
+            'description': 'Contact the user with the given name, email, and phone number.',
+            'name': 'contact_user',
+            'parameters': {
+                'properties': {
+                    'email': {
+                        'description': 'The email of the user',
+                        'type': 'string'
+                    },
+                    'name': {
+                        'description': 'The name of the user',
+                        'type': 'string'
+                    },
+                    'phone': {
+                        'description': 'The phone number of the user',
+                        'type': 'string'
+                    }
+                },
+                'required': ['name', 'email', 'phone'],
+                'type': 'object'
+            }
+        },
+        'type': 'function'
+    }
+]
+```
+
+### Description of parameters from Annotated
+
 ```python
 
 from llm_easy_tools import get_tool_defs
@@ -162,6 +214,8 @@ pprint(get_tool_defs([contact_user]))
 }]
 ```
 
+
+## Examples
 Discover more possibilities and examples in the examples directory and test suite.
 
 ## Limitations

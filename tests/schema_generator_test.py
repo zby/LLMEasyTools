@@ -196,3 +196,71 @@ def test_strict():
     assert function_schema['parameters']['$defs']['Address']['additionalProperties'] == False
     assert function_schema['parameters']['$defs']['Address']['properties']['street']['type'] == 'string'
     assert function_schema['parameters']['$defs']['Company']['additionalProperties'] == False
+
+def test_pydantic_field_params():
+    from pydantic import Field
+
+    def record_reflection(
+        what_have_we_learned: str = Field(..., description="Summary of learnings"),
+        comment: str = Field(..., description="A general comment"),
+        relevant_quotes: list[str] = Field(default_factory=list, description="Relevant quotes"),
+        new_sources: list[str] = Field(default=[], description="New URLs to check")
+    ):
+        """Record reflection about the conversation"""
+        pass
+
+    schema = get_function_schema(record_reflection)
+
+    assert schema['name'] == 'record_reflection'
+    assert schema['description'] == 'Record reflection about the conversation'
+
+    params = schema['parameters']['properties']
+    assert params['what_have_we_learned']['description'] == 'Summary of learnings'
+    assert params['comment']['description'] == 'A general comment'
+    assert params['relevant_quotes']['description'] == 'Relevant quotes'
+    assert params['new_sources']['description'] == 'New URLs to check'
+
+    # Check required fields
+    required = schema['parameters']['required']
+    assert 'what_have_we_learned' in required
+    assert 'comment' in required
+    assert 'relevant_quotes' not in required  # Has default_factory
+    assert 'new_sources' not in required  # Has default
+
+def test_mixed_field_and_annotated():
+    from pydantic import Field
+    from typing import Annotated
+
+    def mixed_params(
+        field_param: str = Field(..., description="Using Field"),
+        annotated_param: Annotated[str, "Using Annotated"] = "default",
+        regular_param: str = "default"
+    ):
+        pass
+
+    schema = get_function_schema(mixed_params)
+    params = schema['parameters']['properties']
+
+    assert params['field_param']['description'] == 'Using Field'
+    assert params['annotated_param']['description'] == 'Using Annotated'
+    assert 'description' not in params['regular_param']
+
+    required = schema['parameters']['required']
+    assert 'field_param' in required
+    assert 'annotated_param' not in required
+    assert 'regular_param' not in required
+
+def test_field_with_default_factory():
+    from pydantic import Field
+
+    def function_with_factory(
+        items: list[str] = Field(default_factory=list, description="Items list")
+    ):
+        pass
+
+    schema = get_function_schema(function_with_factory)
+    params = schema['parameters']['properties']
+
+    assert params['items']['type'] == 'array'
+    assert params['items']['description'] == 'Items list'
+    assert 'required' not in schema['parameters']

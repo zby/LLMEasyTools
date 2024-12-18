@@ -6,6 +6,7 @@ import copy
 import pydantic as pd
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
+from pydantic.fields import FieldInfo
 
 from pprint import pprint
 import sys
@@ -71,6 +72,8 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
         type_ = parameter.annotation
         if type_ is inspect._empty:
             raise ValueError(f"Parameter '{name}' has no type annotation")
+
+        # Handle both Annotated types and Pydantic Fields
         if get_origin(type_) is Annotated:
             if type_.__metadata__:
                 description = type_.__metadata__[0]
@@ -79,8 +82,19 @@ def parameters_basemodel_from_function(function: Callable) -> Type[pd.BaseModel]
             # this happens in postponed annotation evaluation, we need to try to resolve the type
             # if the type is not in the global namespace, we will get a NameError
             type_ = eval(type_, function_globals)
-        default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
-        fields[name] = (type_, pd.Field(default, description=description))
+
+        # Check if the default is a Pydantic Field
+        if isinstance(parameter.default, FieldInfo):
+            # Reuse the existing Field
+            field = parameter.default
+            # Only update description if it was set by Annotated
+            if description is not None:
+                field.description = description
+            fields[name] = (type_, field)
+        else:
+            default = PydanticUndefined if parameter.default is inspect.Parameter.empty else parameter.default
+            fields[name] = (type_, pd.Field(default, description=description))
+
     return pd.create_model(f'{function.__name__}_ParameterModel', **fields)
 
 
